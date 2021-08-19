@@ -1,7 +1,12 @@
+# Llamamos libreria
+
 library(tidyverse)
+
+# Llamamos base
 
 covid <- read_csv("Covid19Casos.csv")
 
+# Indagamos base
 
 head(covid)
 names(covid)
@@ -11,6 +16,8 @@ class(covid$fecha_diagnostico)
 sample(covid$fecha_diagnostico, 10)
 
 unique(covid_confirmados$sepi_apertura)
+
+# Transformamos para achicar base
 
 covid_confirmados <- covid %>% 
   filter(clasificacion_resumen == "Confirmado",
