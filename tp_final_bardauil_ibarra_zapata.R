@@ -110,6 +110,8 @@ confirmados_AMBA_DEPTO <- confirmados_AMBA_filtro %>%
 
 
 #armo un grafico de lineas por departamento
+#no incluye CABA
+
 
 confirmados_AMBA_DEPTO %>%
   ggplot(aes(x = residencia_departamento_nombre, y = cantidad ,
