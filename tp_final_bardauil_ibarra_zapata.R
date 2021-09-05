@@ -4,24 +4,34 @@ library(tidyverse)
 
 # Llamamos base
 
-covid <- read_csv("Covid19Casos.csv")
+# covid <- read_csv("Covid19Casos.csv")
+
+
 
 # Indagamos base
-
-head(covid)
-names(covid)
-
-class(covid$sepi_apertura)
-class(covid$fecha_diagnostico)
-sample(covid$fecha_diagnostico, 10)
-
-unique(covid_confirmados$sepi_apertura)
+# 
+# head(covid)
+# names(covid)
+# 
+# class(covid$sepi_apertura)
+# class(covid$fecha_diagnostico)
+# sample(covid$fecha_diagnostico, 10)
+# 
+# unique(covid_confirmados$sepi_apertura)
 
 # Transformamos para achicar base
 
-covid_confirmados <- covid %>% 
-  filter(clasificacion_resumen == "Confirmado",
-         residencia_provincia_nombre %in% c("Buenos Aires", "CABA"))
+# covid_confirmados <- covid %>% 
+#   filter(clasificacion_resumen == "Confirmado",
+#          residencia_provincia_nombre %in% c("Buenos Aires", "CABA"))
+
+# guardo base achicada para trabajar directamente sobre esa, remuevo la pesada
+
+# readr::write_csv(covid_confirmados,
+#                  'covid_confirmados.csv')
+# rm(covid)
+
+covid_confirmados <- read_csv("covid_confirmados.csv")
 
 conf_sem_depto <- covid_confirmados %>% 
   group_by(sepi_apertura, 

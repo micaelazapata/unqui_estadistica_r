@@ -1,0 +1,104 @@
+---
+title: "Situación sanitaria del Covid-19 en Argentina. Análisis sobre fallecidos de Covid-19 en AMBA"
+author: "Sabrina García Ibarra, Ariana Bardauil, Micaela Zapata"
+date: "8/30/2021"
+output:
+  html_document:
+    code_folding: show
+    theme: paper
+    highlight: pygments
+    toc: true
+---
+
+```{r setup, include=FALSE, warning=FALSE, message = FALSE, ERROR = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Resumen
+
+En el año 2020 una fuerte crisis sanitaria se originó por la aparición del virus SARCOV-2 y la propagación de la pandemia del COVID-19. Esta pandemia afecto la vida y la salud de la población a nivel mundial. En Argentina se han tomado diferentes medidas de aislamiento social, pero a pesar de ello, una buena parte de la población ha sido afectada, alcanzando a más de 100.000 casos de personas fallecidas.
+En este marco, nos interesa conocer quienes han sido las personas más vulnerables al no poder su superar la enfermedad, y encontrar algunas de las causas que podrían haber influido en su deceso. Se analizarán los factores que puedan afectar la tasa de fallecidos por COVID-19 (calculada en relación al total de casos de personas contagiadas en la región del AMBA).
+Se utilizará la base pública provista por el Ministerio de Salud de la Nación, sobre la situación de la COVID-19, disponible en: <https://datos.gob.ar/dataset/salud-covid-19-casos-registrados-republica-argentina/archivo/salud_fd657d02-a33a-498b-a91b-2ef1a68b8d16>. Esta base contiene información actualizada diariamente, a las 21:30 hs. notificando CASOS COVID-19 registrados en el país, con un corte del día a las 17:45 hs. La fecha de bajada de la base es 11 de agosto de 2021.
+Se indagará cómo está compuesta la base, sus dimensiones y los tipos de valores que componen cada variable. Se transformará para poder trabajarla, dado que se trata de un data set de grandes dimensiones.
+Para la etapa analítica, se generará una regresión, evaluando la medida en que diferentes variables independientes afectan a esa tasa y se explorarán como tales: la edad, el sexo, el momento en que se detectó la enfermedad, si la persona fue internada o no, si estuvo en cuidados intensivos o no y si tuvo asistencia respiratoria o no.
+En particular, para poder analizar el momento de contagio, se trabajará creará una variable que vincule la semana epidemiológica con el año correspondiente, dado que las semanas epidemiológicas se reinician cada año.
+Se analizarán modelos multivariados comparando la mejor aproximación de un modelo con efectos fijos y aleatorios.
+
+## Estructura de los datos
+
+La base covid-19 cuenta con 25 variables y 16.552.542 registros en total. Para posibilitar su procesamiento, se reducirá el análisis a los casos clasificados como "confirmados". Eso reduce la cantidad de registros a 2.497.319.
+Una vez establecido este recorte, se trabajará sobre los casos correspondientes al AMBA, lo que devuelve una base de 1.252.588 registros.
+Como parte del análisis exploratorio, hemos observado:
+
+```{r, include=FALSE}
+covid_confirmados <- read_csv("covid_confirmados.csv")
+```
+
+Las variables de la base, son:
+
+```{r}
+str(covid_confirmados)
+library(skimr)
+skim(covid_confirmados)
+
+class(covid_confirmados$fecha_diagnostico)
+sample(covid_confirmados$fecha_diagnostico, 10)
+
+unique(covid_confirmados$sepi_apertura)
+```
+
+Una vez que contamos con los casos confirmados, retiramos los casos que corresponden a 2019 y filtramos los departamentos y comunas correspondientes a los distritos que componen el AMBA.
+
+```{r, include=FALSE, results='hide'}
+library("lubridate")
+
+confirmados_AMBA_filtro <- covid_confirmados %>% 
+  filter(year(fecha_diagnostico)!= 2019) %>% 
+  filter(residencia_departamento_nombre  %in% c('Almirante Brown', 
+                                                'Avellaneda', 'Berazatagui'
+                                                , 'Berisso', 'Brandsen', 
+                                                'Campana', 'Ca?uelas', 'Ensenada'
+                                                , 'Escobar', 'Esteban Echeverr?a',
+                                                'Exaltaci?n de la Cruz', 
+                                                'Ezeiza', 'Florencio Varela',
+                                                'General Las Heras', 
+                                                'General Rodr?guez', 
+                                                'General San Mart?n', 
+                                                'Hurlingham', 'Ituzaing?', 
+                                                'Jos? C. Paz', 'La Matanza', 
+                                                'Lan?s', 'La Plata', 
+                                                'Lomas de Zamora', 
+                                                'Luj?n', 'Marcos Paz',
+                                                'Malvinas Argentinas',
+                                                'Moreno', 'Merlo', 'Mor?n',
+                                                'Pilar', 'Presidente Per?n',
+                                                'Quilmes', 'San Fernando', 
+                                                'San Isidro', 
+                                                'San Miguel', 'San Vicente', 
+                                                'Tigre', 'Tres de Febrero', 
+                                                'Vicente L?pez','Z?rate',
+                                                'COMUNA 01', 'COMUNA 02',  
+                                                'COMUNA 03' ,'COMUNA 04',
+                                                'COMUNA 05','COMUNA 06','COMUNA 07', 
+                                                'COMUNA 08', 'COMUNA 09', 'COMUNA 10'
+                                                ,'COMUNA 11', 'COMUNA 12', 'COMUNA 13',
+                                                'COMUNA 14', 'COMUNA 15'))
+```
+
+Evaluamos, semana epidemiológica como semana y año
+
+```{r}
+head(confirmados_AMBA_filtro)
+```
+
+Creamos variable que vincula año y semana epidemiológica.
+
+```{r}
+confirmados_AMBA_epi <- confirmados_AMBA_filtro %>% 
+  mutate(anio = year(fecha_diagnostico)) %>% 
+  mutate(sepi_anio = paste(sepi_apertura, anio, sep = "_"))
+
+head(confirmados_AMBA_epi)
+```
+
