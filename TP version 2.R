@@ -1,11 +1,12 @@
 # Llamamos libreria
 
 library(tidyverse)
+library(skimr)
+library("lubridate")
 
 # Llamamos base
 
 # covid <- read_csv("Covid19Casos.csv")
-
 
 
 # Indagamos base
@@ -31,35 +32,16 @@ library(tidyverse)
 #                  'covid_confirmados.csv')
 # rm(covid)
 
-covid_confirmados <- read_csv("covid_confirmados.csv")
+#Crear la base solo con AMBA ---------------------
 
-conf_sem_depto <- covid_confirmados %>% 
-  group_by(sepi_apertura, 
-           # residencia_provincia_nombre,
-           residencia_departamento_id, 
-           residencia_departamento_nombre, 
-           edad, 
-           sexo) %>% 
-  summarise(cantidad = n()) 
+covid_confirmados <- read_csv("E:\\TODO\\Cursos\\Cursos ARICHULA\\Introduccion a R Estadistica UNQ\\Trabajo final\\Covid19Casos.csv")
 
-conf_sem_depto <- conf_sem_depto %>% 
-  filter(!residencia_departamento_nombre == "SIN ESPECIFICAR")
 
-names(conf_sem_depto)
-
-conf_depto <- conf_sem_depto %>% 
-  group_by(residencia_departamento_id, sepi_apertura) %>% 
-  summarise(n = n())
-
-#lubridate es para manejar fechas
 #filtro los municipios del AMBA
 #se que hay una forma de hacer un filtro.if para poner como condicional
 #para que filtre solo si en provincia dice buenos aires pero no me sali?
 
-library("lubridate")
-
 confirmados_AMBA_filtro <- covid_confirmados %>% 
-  filter(year(fecha_diagnostico)!= 2019) %>% 
   filter(residencia_departamento_nombre  %in% c('Almirante Brown', 
                                                 'Avellaneda', 'Berazatagui'
                                                 , 'Berisso', 'Brandsen', 
@@ -87,70 +69,36 @@ confirmados_AMBA_filtro <- covid_confirmados %>%
                                                 'COMUNA 03' ,'COMUNA 04',
                                                 'COMUNA 05','COMUNA 06','COMUNA 07', 
                                                 'COMUNA 08', 'COMUNA 09', 'COMUNA 10'
-                                                ,'COMUNA 11', 'COMUNA 12', 'COMUNA 13',
-                                                'COMUNA 14', 'COMUNA 15'))
-
-
-confirmados_AMBA <- confirmados_AMBA_filtro %>% 
-  group_by(residencia_provincia_nombre,fecha_diagnostico) %>%
-  summarise(cantidad = n())
-
-#Comparacion de CABA y AMBA por fechas
-
-confirmados_AMBA %>%
-  ggplot() +
-  aes(x = fecha_diagnostico, y = cantidad, color = residencia_provincia_nombre)+
-  geom_line() +
-  scale_x_date(date_labels = "%B/%y") +
-  ylab("casos")+
-  xlab("meses")+
-  labs(title = "Casos mensuales en CABA y municipios del AMBA",
-       caption = "Elaborado en base a datos de Argentina.gob.ar")
-
-
-
-
-#hago un grafico por departamento de GBA
-
-#filtro CABA 
-confirmados_AMBA_DEPTO <- confirmados_AMBA_filtro %>%
-  filter(residencia_provincia_nombre != 'CABA') %>%
-  group_by(residencia_departamento_nombre) %>%
-  summarise(cantidad = n())
-
-
-#armo un grafico de lineas por departamento
-#no incluye CABA
-
-
-confirmados_AMBA_DEPTO %>%
-  ggplot(aes(x = residencia_departamento_nombre, y = cantidad ,
-             fill = cantidad)) + geom_bar(stat="identity") +
-  coord_flip() +
-  labs(title = "Casos confirmados de Covid-19 por Departamento del GBA",
-       x = "Cantidad de casos",
-       y = "Departamento")
+                                                ,'COMUNA 11', 'COMUNA 12', 'COMUNA 13','COMUNA 14', 'COMUNA 15'))
 
 confirmados_AMBA_filtro %>%     
-  filter(!residencia_departamento_nombre == "SIN ESPECIFICAR")                                        
+  filter(!residencia_departamento_nombre == "SIN ESPECIFICAR")     
+
+rm(covid_confirmados)
 
 #explorando la base --------------------------
 summary(confirmados_AMBA_filtro)
 str(confirmados_AMBA_filtro)
 skim(confirmados_AMBA_filtro)
 
-#valores outliers en edad
-confirmados_AMBA_filtro %>%
-  ggplot(aes(x=edad))+
-  geom_histogram(bins=10)+
-  theme_minimal()
-
 #eliminar na y outlires de edad (seleccionar solo las que estan entre 0 y 100):
 confirmados_AMBA_filtro2 <-confirmados_AMBA_filtro %>%
   filter (edad<105 & edad>-1)%>%
-  drop_na(edad)
+  drop_na(edad) %>%
+  filter (sexo != 'NR')
 
-summary(confirmados_AMBA_filtro2$edad)
+unique(confirmados_AMBA_filtro2$fallecido)
+
+#Hacer tasa de fallecidos sobre el total de casos. Fallecidos/Casos en C/Municipio
+#Graficar el indicador
+
+confirmados_AMBA_filtro3 <- confirmados_AMBA_filtro2%>%
+  group_by(residencia_departamento_nombre, fallecido)%>%
+  summarise (residencia=n())%>%
+  #top_n(n = 10) %>%
+  ggplot(aes(x=reorder(residencia_departamento_nombre,residencia), weight = residencia, fill = fallecido))+
+  geom_bar() + coord_flip()
+confirmados_AMBA_filtro3
 
 # Internacion, tenemos muchos NA, que asumimos es porque no se han internado
 # ¿Como hacer para ponerle 1 a si fue internado?, 
@@ -163,7 +111,7 @@ summary(confirmados_AMBA_filtro2$edad)
 
 confirmados_AMBA_filtro2 <-confirmados_AMBA_filtro2 %>% 
   mutate(anio = year(fecha_diagnostico)) %>% 
-  mutate(sepi_anio = paste(sepi_apertura, anio, sep = "_"))
+  mutate(sepi_anio = paste(anio,sepi_apertura, sep = "_"))
 
 confirmados_AMBA_filtro2 %>%
   summary()
@@ -171,48 +119,48 @@ confirmados_AMBA_filtro2 %>%
 #¿cuales fueron las olas de mayores contagiados y fallecidos en el AMBA?
 
 confirmados_AMBA_filtro2 %>%
+  group_by(sepi_anio, fallecido)%>%
+  arrange(desc(sepi_anio))%>%
   ggplot(aes(x=sepi_anio, y=fallecido, fill=fallecido))+
-  geom_col()
+  geom_col()+
+  labs(title = "Casos confirmados de Covid-19",
+       x = "Semana epidemiologica",
+       y = "cantidad de casos")
 
+confirmados_AMBA_filtro2
 
-#¿cuales son las fechas que definen las olas y variaciones por departamento?
+#¿cuales son los municipios del AMBA con mas casos?
 
-confirmados_AMBA_graficoxdpto <- confirmados_AMBA_filtro2 %>% 
-  group_by(residencia_provincia_nombre,sepi_anio) %>%
-  summarise(cantidad = n())
-
-
-confirmados_AMBA_graficoxdpto %>%
-  ggplot() +
-  aes(x = sepi_anio, y = cantidad, color = residencia_provincia_nombre)+
-  geom_line() +
-  scale_x_date(date_labels = "%B/%y") +
-  ylab("casos")+
-  xlab("meses")+
-  labs(title = "Casos mensuales en CABA y municipios del AMBA",
-       caption = "Elaborado en base a datos de Argentina.gob.ar")
-
-
-#hago un grafico por departamento de GBA
-
-#filtro CABA 
-confirmados_AMBA_DEPTO <- confirmados_AMBA_filtro %>%
-  filter(residencia_provincia_nombre != 'CABA') %>%
-  group_by(residencia_departamento_nombre) %>%
-  summarise(cantidad = n())
-
-
-#armo un grafico de lineas por departamento
-
-confirmados_AMBA_DEPTO %>%
-  ggplot(aes(x = residencia_departamento_nombre, y = cantidad ,
-             fill = cantidad)) + geom_bar(stat="identity") +
+confirmados_AMBA_filtro2 %>% 
+  group_by(residencia_departamento_nombre,fallecido) %>%
+  ggplot(aes(x = residencia_departamento_nombre, y = fallecido,
+             fill = fallecido)) + geom_bar(stat="identity") +
   coord_flip() +
   labs(title = "Casos confirmados de Covid-19 por Departamento del GBA",
        x = "Cantidad de casos",
        y = "Departamento")
 
-#analizar por departamento los casos y fallecidos por sexo, edad promedio e internación
+
+#Analisis de los casos de fallecidos por sexo 
+
+confirmados_AMBA_filtro2 %>% 
+  group_by(sexo,fallecido) %>%
+  ggplot(aes(x = sexo, y = fallecido, fill=fallecido)) + 
+  geom_bar(stat="identity") +
+  coord_flip() +
+  labs(title = "Casos confirmados de Covid-19 por sexo",
+       x = "sexo",
+       y = "Fallecidos")
+
+# Analisis de los casos fallecidos segun internación, edad y municipio
+
+
+#Analisis de casos por edad y fallecimiento
+
+confirmados_AMBA_fallecido <- confirmados_AMBA_filtro2%>%
+  group_by(fallecido, residencia_departamento_nombre)%>%
+  summarise (edad_promedio=mean(edad))
+
 
 
 #creando las variables para incluir en la regresion -----------------------
@@ -251,6 +199,11 @@ covid_confirmados_pararegresion <- confirmados_AMBA_filtro%>%
 
 # con estract separar las variables sexo, fallecidos en dos, par que nos quede por cantidad de femeninos y cantidad de masculinos
 #hacer lo mismo con cada variable binaria, para poner solo en la regresion la cantidad de positivos
+
+
+
+
+
 
 
 
