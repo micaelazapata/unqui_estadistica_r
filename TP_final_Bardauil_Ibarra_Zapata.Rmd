@@ -4,10 +4,9 @@ author: "Sabrina García Ibarra, Ariana Bardauil, Micaela Zapata"
 date: "8/30/2021"
 output:
   html_document:
-    code_folding: show
-    theme: paper
-    highlight: pygments
     toc: true
+    toc_float: true
+    toc_depth: 5
 ---
 
 ```{r setup, include=FALSE, warning=FALSE, message = FALSE, ERROR = FALSE}
@@ -15,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
-## Resumen
+## 1.[**Resumen**]{.ul}
 
 En el año 2020 una fuerte crisis sanitaria se originó por la aparición del virus SARCOV-2 y la propagación de la pandemia del COVID-19. Esta pandemia afecto la vida y la salud de la población a nivel mundial. En Argentina se han tomado diferentes medidas de aislamiento social, pero a pesar de ello, una buena parte de la población ha sido afectada, alcanzando a más de 100.000 casos de personas fallecidas.
 En este marco, nos interesa conocer quienes han sido las personas más vulnerables al no poder su superar la enfermedad, y encontrar algunas de las causas que podrían haber influido en su deceso. Se analizarán los factores que puedan afectar la tasa de fallecidos por COVID-19 (calculada en relación al total de casos de personas contagiadas en la región del AMBA).
@@ -25,14 +24,14 @@ Para la etapa analítica, se generará una regresión, evaluando la medida en qu
 En particular, para poder analizar el momento de contagio, se trabajará creará una variable que vincule la semana epidemiológica con el año correspondiente, dado que las semanas epidemiológicas se reinician cada año.
 Se analizarán modelos multivariados comparando la mejor aproximación de un modelo con efectos fijos y aleatorios.
 
-## Estructura de los datos
+## 2. [**Estructura de los datos**]{.ul}
 
 La base covid-19 cuenta con 25 variables y 16.552.542 registros en total. Para posibilitar su procesamiento, se reducirá el análisis a los casos clasificados como "confirmados". Eso reduce la cantidad de registros a 2.497.319.
 Una vez establecido este recorte, se trabajará sobre los casos correspondientes al AMBA, lo que devuelve una base de 1.252.588 registros.
 Como parte del análisis exploratorio, hemos observado:
 
 ```{r, include=FALSE}
-covid_confirmados <- read_csv("covid_confirmados.csv")
+covid_confirmados <- read_csv("D:\\TODO\\Cursos\\Cursos ARICHULA\\Introduccion a R Estadistica UNQ\\Trabajo final\\Covid19Casos.csv")
 ```
 
 Las variables de la base, son:
