@@ -7,7 +7,6 @@ library(nlme)
 library(dplyr)
 
 # Llamamos base
-
 # covid <- read_csv("Covid19Casos.csv")
 
 # Indagamos base

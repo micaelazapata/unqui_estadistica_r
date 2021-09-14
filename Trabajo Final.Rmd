@@ -1,5 +1,5 @@
 ---
-title: "Variables asociadas a los fallecimientos por Covid-19. Año 2020, Región AMBA"
+title: "Variables asociadas a los fallecimientos por Covid-19. Año 2020-2021, Región AMBA"
 author: "Bardauil, Ibarra, Zapata"
 date: "13/9/2021"
 output:
@@ -7,7 +7,7 @@ output:
     toc: true
     toc_float: true
     toc_depth: 5
-    theme: pape
+    theme: paper
 ---
 
 ```{r setup, include=FALSE, warning=FALSE, message = FALSE, ERROR = FALSE}
@@ -19,6 +19,7 @@ library(skimr)
 library("lubridate")
 library(nlme)
 library(dplyr)
+library(harrypotter)
 ```
 
 ## 1.[**Resumen**]{.ul}
@@ -26,18 +27,20 @@ library(dplyr)
 En el año 2020 una fuerte crisis sanitaria se originó por la aparición del virus SARCOV-2 y la propagación de la pandemia del COVID-19.Esta pandemia afecto la vida y la salud de la población a nivel mundial.En Argentina se han tomado diferentes medidas de aislamiento social pero, a pesar de ello, una buena parte de la población ha sido afectada, alcanzando más de 100.000 casos de personas fallecidas.En este marco, nos interesa conocer quienes han sido las personas más vulnerables al no poder su superar la enfermedad, y encontrar algunas de las variables que podrían haber influido en su deceso.Se analizarán los factores que puedan afectar la tasa de fallecidos por COVID-19 (calculada en relación al total de casos de personas contagiadas en diferentes localidades del AMBA).
 Se utilizará la base pública provista por el Ministerio de Salud de la Nación, sobre la situación de la COVID-19, disponible en: <https://datos.gob.ar/dataset/salud-covid-19-casos-registrados-republica-argentina/archivo/salud_fd657d02-a33a-498b-a91b-2ef1a68b8d16>.
 
-Esta base contiene información de actualización diaria, notificando CASOS COVID-19 registrados en el país.La fecha de bajada de la base es 11 de agosto de 2021 con un corte a las 17:45 hs.Se indagará cómo está compuesta la base, sus dimensiones y los tipos de valores que componen cada variable. La misma se delimitará y transformará para poder trabajarla, dado que se trata de un data set de grandes dimensiones.
+Esta base contiene información de actualización diaria, notificando CASOS COVID-19 registrados en el país.La fecha de bajada de la base es 11 de agosto de 2021 con un corte a las 17:45 hs.Se indagará cómo está compuesta la base, sus dimensiones y los tipos de valores que componen cada variable.
+La misma se delimitará y transformará para poder trabajarla, dado que se trata de un data set de grandes dimensiones.
 Para la etapa analítica, se generará una regresión, evaluando la medida en que diferentes variables independientes afectan a esa tasa y se explorarán como tales: la edad, el sexo, si la persona fue internada o no, si estuvo en cuidados intensivos o no y si tuvo asistencia respiratoria o no.
 En particular, para poder analizar el momento de contagio, se creará la variable que vincule la semana epidemiológica con el año correspondiente, de letalidad total del año 2020 por localidad.
-Se analizarán modelos multivariados comparando la mejor aproximación de un modelo con efectos fijos y aleatorios. [VER ESTO]
+Se analizarán modelos multivariados comparando la mejor aproximación de un modelo con efectos fijos y aleatorios.
+
 
 ## 2. [**Estructura de los datos**]{.ul}
 
 La base covid-19 cuenta con 25 variables y 16.552.542 registros en total.
 Para posibilitar su procesamiento, se reducirá el análisis a los casos clasificados como "confirmados".
 **Eso reduce la cantidad de registros a 2.497.319**.
-Una vez establecido este recorte, se trabajará sobre los casos correspondientes al AMBA, lo que devuelve una base de 1.360.663 registros. Iniciamos la preparación de la base.  
-
+Una vez establecido este recorte, se trabajará sobre los casos correspondientes al AMBA, lo que devuelve una base de 1.360.663 registros.
+Iniciamos la preparación de la base.
 
 ```{r Delimitacion}
 # Código de reducción de la base:
@@ -57,38 +60,61 @@ covid_confirmados <- read_csv("covid_confirmados.csv")
 
 ```
 
-
 Como parte del análisis exploratorio, hemos observado que las variables de la base, son:
 
-
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | **Título de la Columna**           | **Tipo de dato**       | **Descripción**                                                 |
-|------------------------------------|------------------------|-----------------------------------------------------------------|
++====================================+========================+=================================================================+
 | *id_evento_caso*                   | integer                | Número de caso                                                  |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *sexo*                             | String                 | Sexo                                                            |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *edad*                             | Numero entero          | Edad                                                            |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *edad_años_meses*                  | String                 | Edad indicada en meses o años                                   |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *residencia_pais_nombre*           | string                 | pais de residencia                                              |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *residencia_provincia_nombre*      | string                 | Provincia de residencia                                         |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *residencia_departamento_nombre*   | string                 | Departamento de residencia                                      |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *carga_Provincia_nombre*           | string                 | Provincia de establecimiento                                    |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *fecha_inicio_sintomas*            | Fecha ISO-8601(date)   | Fecha de inicio de sintomas                                     |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *fecha_Apertura*                   | Fecha ISO-8601(date)   | Fecha de apertura del caso                                      |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *sepi_Apertura*                    | Integer                | Semana Epidemiológica de fecha de apertura                      |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *fecha_internacion*                | Fecha ISO-8601 (date)  | Fecha de internación                                            |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *cuidado_intensivo*                | string                 | Indicación si estuvo en cuidado intensivo                       |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *fecha_cui_intensivo*              | Fecha ISO-8601 (date)  | Fecha de ingreso a cuidado intensivo en el caso de corresponder |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *fallecido*                        | string                 | Indicacion de Fallecido                                         |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *fecha_fallecimiento*              | Tiempo ISO-8601 (time) | Fecha de fallecimiento en el caso de corresponder               |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *asistencia_respiratoria_mecanica* | string                 | Indicación si requirió asistencia respiratoria mecánica         |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *carga_provincia_id*               | integer                | Código de Provincia de carga                                    |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *origen_financiamiento*            | string                 | Origen de financiamiento                                        |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *Clasificacion*                    | string                 | Clasificacion manual del registro                               |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *clasificacion_resumen*            | string                 | clasificacion del caso                                          |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *residencia_provincia_id*          | integer                | Codigo de Provincia de Residencia                               |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *fecha_diagnostico*                | Tiempo ISO-8601 (time) | Fecha de diagnóstico                                            |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 | *residencia_departamento_id*       | integer                | Codigo departamento de residencia                               |
++------------------------------------+------------------------+-----------------------------------------------------------------+
 
-Empezamos por delimitar las localidades con las que sí queremos trabajar, y que pertenecen al AMBA. 
+Empezamos por delimitar las localidades con las que sí queremos trabajar, y que pertenecen al AMBA.
 
 ```{r DelimitacionA}
 confirmados_AMBA_filtro <- covid_confirmados %>% 
@@ -122,7 +148,8 @@ confirmados_AMBA_filtro <- covid_confirmados %>%
                                                 ,'COMUNA 11', 'COMUNA 12', 'COMUNA 13','COMUNA 14', 'COMUNA 15'))
 ```
 
-Luego eliminamos los casos en que la localidad no ha sido especificada, y unificamos las comunas bajo el nombre "CABA", dejando el resto de las localidades con su nombre y seleccionamos las variables que vamos a usar.  
+
+Luego eliminamos los casos en que la localidad no ha sido especificada, y unificamos las comunas bajo el nombre "CABA", dejando el resto de las localidades con su nombre y seleccionamos las variables que vamos a usar.
 
 ```{r Limpieza2}
 confirmados_para_trabajar <- confirmados_AMBA_filtro %>%
@@ -139,7 +166,7 @@ confirmados_para_trabajar <- confirmados_AMBA_filtro %>%
          sepi_apertura, fallecido,origen_financiamiento,fecha_apertura)
 ```
 
-Exploramos el sub set de datos que generamos:  
+Exploramos el sub set de datos que generamos:
 
 ```{r Exploracion}
 summary(confirmados_para_trabajar)
@@ -161,11 +188,9 @@ rm(covid_confirmados)
 rm(confirmados_AMBA_filtro)
 ```
 
-
 ## 3.[**Análisis descriptivo**]{.ul}
 
-Realizamos un análisis  de las variables más relevantes, descriviendo contagios y fallecimientos por edad, sexo y localidad.  
-
+Realizamos un análisis de las variables más relevantes, descriviendo contagios y fallecimientos por edad, sexo y localidad.
 
 ```{r Desciptivo1}
 # Fallecidos/as por edad
@@ -194,12 +219,214 @@ confirmados_agrupadosxedad <- confirmados_para_trabajar %>%
   head(10)
 ```
 
+Se observa que la edad de mayor de contagio se da entre los *26 y 35 años*.
+Y, la mayor cantidad de contagiados, en los *29 y 30 años*, con más de *34 mil contagiados*.Sin embargo, los más afectados por la enfermedad son aquellos de mayor edad, dandose la mayor cantidad de fallecidos entre los 70 y 80 años, con el mayor pico en los *77 años* con *969 fallecidos*, siguiendole muy de cerca la edad de *73 años* con *656 fallecidos*
+
+```{r}
+confirmados_agrupadosxlocalidad<-confirmados_para_trabajar%>%
+  group_by(localidad)%>%
+  summarise(n=n())%>%
+  arrange(desc(n))%>%
+  head(10)
+```
+
+Se observa que **las localidades con mayor tasa de contagios son CABA y la matanza**, seguidos por **La Plata y Quilmes**. No obstante, coinciden con ser las localidades de mayor población.
+
+```{r}
+Fallecidos_agrupadosxlocalidad<-confirmados_para_trabajar%>%
+  filter(fallecido=="SI")%>%
+  group_by(localidad)%>%
+  summarise(n=n())%>%
+  arrange(desc(n))%>%
+  head(10)
+
+```
+
+Las localidades con mayor tasa de fallecidos, conciden con las de mayores casos,pero el ranking es diferente siendo *la Matanza* la localidad con mayor fallecidos, seguidos por *CABA,la Plata y Quilmes*.
+Cabe destacar que el salto que se produce entre las dos primeras es mucho menos que el que se observa en los contagiados.
+Mientras que la brecha entre el 3er puesto y el primero en numero de contagiados es del *30%*, entre las mismas localidades,la relacion entre *CABA* y Quilmes es del *56%*, lo que muestra una tasa de letalidad diferente entre ellas.
+Es por ello que en el trabajo vamos a analizar los factores que explican estas diferentes tasas de letalidad entre las localidades
+
+    ------------------------------------------------------------------------
+
+## 4.[**Analizando las olas de contagio**]{.ul}
+
+### *Semana epidemiologica para ver las olas de contagio*
+
+```{r}
+confirmados_para_trabajar <-confirmados_para_trabajar %>% 
+    mutate(anio = year(fecha_apertura)) %>% 
+    mutate(sepi_anio = paste(anio,sepi_apertura, sep = "_"))
+```
+
+### *¿cuales fueron las olas de mayores contagiados y fallecidos en el AMBA?*
+
+```{r}
+confirmados_para_trabajar %>%
+   group_by(sepi_anio, fallecido)%>%
+    arrange(desc(sepi_anio))%>%
+ggplot(aes(x=sepi_anio, y=fallecido, fill=fallecido))+
+  geom_col()+
+  labs(title = "Casos confirmados de Covid-19",
+       x = "Semana epidemiologica",
+       y = "cantidad de casos")
+
+confirmados_xsemanaepi<-confirmados_para_trabajar%>%
+  group_by(sepi_anio)%>%
+    summarise(n=n())%>%
+  arrange(desc (n))%>%
+  head(10)
+
+```
+
+Las semanas de mayor contagio se dieron en el 2021, en particular las semanas *14,15y 16*.
+Esto se dio entre el *28 de marzo* y el *10 de abril*
+
+```{r}
+confirmados_para_trabajar %>%
+  filter (fallecido=="SI")%>%
+  group_by(sepi_anio, fallecido)%>%
+  arrange(desc(sepi_anio))%>%
+  ggplot(aes(x=sepi_anio, y=fallecido, fill=fallecido))+
+  geom_col()+
+  labs(title = "Casos confirmados de Covid-19",
+       x = "Semana epidemiologica",
+       y = "cantidad de casos")
+  
+  fallecidos_xsemanaepi<-confirmados_para_trabajar%>%
+    filter(fallecido=="SI")%>%
+    group_by(sepi_anio)%>%
+    summarise(n=n())%>%
+    arrange(desc (n))%>%
+    head(10)
+```
+
+La semana epidemiologia de mayor fallecimiento se dan entre *15 y 16* con más de *1300 fallecidos*. Esto se dio hacia principios de abril de este año (2021)
+
+## 5.[**Analisis de letalidad**]{.ul}
+
+```{r}
+# Calculamos Tasa de letalidad = fallecidos/nofallecidos*100
+  
+  confirmados_AMBA_xdepto <- confirmados_para_trabajar %>%
+    group_by(localidad, fallecido) %>%
+    summarise (residencia=n()) %>% 
+    pivot_wider(names_from = fallecido, values_from = residencia) %>% 
+    mutate(ratio_fall_nofall = round(SI / NO,5)*100) %>% 
+    select(-SI, -NO)
+```
+
+### ¿cuales son los municipios que han registrado la mayor tasa de letalidad?
+
+```{r}
+confirmados_AMBA_xdepto %>%
+  arrange(desc(ratio_fall_nofall))%>%
+  head(10)
+```
+
+  ------------------------------------------------------------------------
+
+## 6.[**Armando la Regresión**]{.ul}
+
+```{r}
+covid_confirmados_pararegresion <- confirmados_para_trabajar %>%
+  group_by(localidad)%>%
+    summarise(edad_promedio=mean(edad,na.rm=TRUE),
+                                 Q_M=sum(sexo=="F")/n(),
+                                 Q_H=sum(sexo=="M")/n(),
+                                 Q_respirador=sum(asistencia_respiratoria_mecanica=="SI"),
+                                 Q_fin_privado=sum(origen_financiamiento=="Privado"), 
+                                 Q_fin_publico=sum(origen_financiamiento=="Público"),
+                                 #Q_internacion=sum(fecha_internacion!=NA),
+                                 Q_cuidadoIntensivo=sum(cuidado_intensivo=="SI"))
+                              
+                                                          
+  
+base_regresion_final <-covid_confirmados_pararegresion%>%
+left_join(confirmados_AMBA_xdepto, by = "localidad")
 
 
+modelo_lineal <- base_regresion_final %>%
+  lm(ratio_fall_nofall ~ edad_promedio+Q_M+Q_H+ Q_fin_privado + Q_fin_publico + Q_respirador + Q_cuidadoIntensivo , .)
 
+summary(modelo_lineal)
+base_regresion_final %>%
+  ggplot(aes(x=edad_promedio, y=ratio_fall_nofall))+
+geom_point()
 
+base_regresion_final %>%
+  ggplot(aes(x=Q_M, y=ratio_fall_nofall))+
+  geom_point() +
+geom_smooth(method = lm)
 
+base_regresion_final %>%
+  ggplot(aes(x=Q_H, y=ratio_fall_nofall))+
+  geom_point() +
+  geom_smooth(method = lm)
 
+```
 
+La tasa de letalidad por municipio esta asociada a la edad de las personas contagiadas pero no guarda relación con el resto de las variables.
+Los resultados indican que la tasa de letalidad por municipio aumenta en *0,37* puntos cuando aumenta en un año la edad del infectad.
+Retomando lo visto anteriormente, los municipios con mayor tasa de letalidad seran aquellos que presenten una población de infectados mas envejecida
 
+```{r}
+# se probará el analisis interactuando la edad y el sexo de lso
+modelo_lineal_2 <- base_regresion_final %>%
+  lm(ratio_fall_nofall ~ edad_promedio + Q_M + Q_H +Q_respirador+Q_cuidadoIntensivo + 
+                          Q_M * edad_promedio +  Q_H * edad_promedio, .)
+     
+summary(modelo_lineal_2)  
+```
 
+Los resultados no cambian cuando el analisis se hace interactuando.
+La edad con el sexo de los infectados. Con lo cual se asume que la tasa de letalidad. No esta vinculada con las personas mayores de diferente género.
+
+```{r}
+modelo_lineal_3 <- base_regresion_final %>%
+  lm(ratio_fall_nofall ~ edad_promedio + Q_M + Q_H +Q_respirador+Q_cuidadoIntensivo + 
+       Q_cuidadoIntensivo * edad_promedio +  Q_cuidadoIntensivo * edad_promedio, .)
+
+summary(modelo_lineal_3)
+```
+
+La interacción entre edad y el haber estado en cuidados intensivos, no es significativa. Es decir, la tasa de letalidad por municipio no cambia si en el municipio hay más personas internadas en cuidados intensivos.
+
+```{r}
+modelo_lineal_4 <-base_regresion_final%>%
+  lm(ratio_fall_nofall ~ edad_promedio + Q_H + Q_M +Q_respirador+Q_cuidadoIntensivo + 
+      +  Q_cuidadoIntensivo * Q_H   +  Q_cuidadoIntensivo * Q_M, .)
+
+summary(modelo_lineal_4)
+```
+
+Del mismo modo, tampoco ser hombre o mujer afecta la tasa de letalidad, con el hecho de haber pasado por cuidado intensivos
+
+```{r}
+modelo_lineal_5 <-base_regresion_final%>%
+  lm(ratio_fall_nofall ~ edad_promedio + Q_H + Q_M +Q_respirador+Q_cuidadoIntensivo + 
+       +  Q_cuidadoIntensivo * Q_respirador, .)
+
+summary(modelo_lineal_5)
+
+```
+
+En este sentido, el estar en cuidados intensivos y tener asitencia respiratoria mecanica reduce la tasa de mortalidad en 0,00000079 puntos.
+Y tambien hace reducir la incidencia la edad promedio, pasando a 0,307 puntos por un aumento en un 1% de la letalidad
+
+### **Vamos a comparar los 4 modelos analizados**
+
+```{r}
+anova(modelo_lineal, modelo_lineal_2, modelo_lineal_3, modelo_lineal_4, modelo_lineal_5)
+
+#¿cómo se entiende esto?
+```
+
+------------------------------------------------------------------------
+
+## 7.[**Conclusiones**]{.ul}
+
+La tasa de letalidad solo depende positivamente de la edad de las personas, y negativamente de haber estado internado en cuidados intensivos con respirador.
+Las internaciones sin asistencia respiratoria no cambian la tasa de letalidad de los municipios, al igual que no hay diferencia entre el género de las personas.En línea, tampoco se distinguen diferencias entre aquellos que con ingresos más altos pueden acceder al sistema de salud privado
+
+Por lo tanto, la edad es el factor clave que explica la tasa de letalidad de los municipios, y la internacion con asistencia repiratoria mecanica tiende a reducir en una pequeña medida dicha tasa de letalidad.
