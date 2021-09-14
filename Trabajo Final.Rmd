@@ -259,7 +259,7 @@ confirmados_para_trabajar <-confirmados_para_trabajar %>%
     mutate(sepi_anio = paste(anio,sepi_apertura, sep = "_"))
 ```
 
-### *¿cuales fueron las olas de mayores contagiados y fallecidos en el AMBA?*
+### *¿Cuales fueron las olas de mayores contagiados y fallecidos en el AMBA?*
 
 ```{r}
 confirmados_para_trabajar %>%
