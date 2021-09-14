@@ -36,7 +36,7 @@ Se analizarán modelos multivariados comparando la mejor aproximación de un mod
 La base covid-19 cuenta con 25 variables y 16.552.542 registros en total.
 Para posibilitar su procesamiento, se reducirá el análisis a los casos clasificados como "confirmados".
 **Eso reduce la cantidad de registros a 2.497.319**.
-Una vez establecido este recorte, se trabajará sobre los casos correspondientes al AMBA, lo que devuelve una base de 1.252.588 registros. Iniciamos la preparación de la base.  
+Una vez establecido este recorte, se trabajará sobre los casos correspondientes al AMBA, lo que devuelve una base de 1.360.663 registros. Iniciamos la preparación de la base.  
 
 
 ```{r Delimitacion}
@@ -154,7 +154,49 @@ confirmados_para_trabajar <-confirmados_para_trabajar %>%
   filter (edad<105 & edad>-1)%>%
   drop_na(edad) %>%
   filter (sexo != 'NR')
+
+# removemos data sets anteriores
+
+rm(covid_confirmados)
+rm(confirmados_AMBA_filtro)
 ```
+
+
+## 3.[**Análisis descriptivo**]{.ul}
+
+Realizamos un análisis  de las variables más relevantes, descriviendo contagios y fallecimientos por edad, sexo y localidad.  
+
+
+```{r Desciptivo1}
+# Fallecidos/as por edad
+distribucion_fallecido_edad <- confirmados_para_trabajar %>%
+  filter(fallecido == "SI") %>%
+  ggplot(aes(x = edad)) +
+  geom_histogram(binwidth = 30)
+distribucion_fallecido_edad
+
+Fallecidos_agrupadosxedad <- confirmados_para_trabajar %>%
+  filter(fallecido == "SI") %>%
+  group_by(edad) %>%
+  summarise(n = n()) %>%
+  arrange(desc(n)) %>%
+  head(30)
+
+distribucion_contagiados_edad <- confirmados_para_trabajar %>%
+  ggplot(aes(x=edad)) +
+  geom_histogram(bins = 30)
+distribucion_contagiados_edad
+
+confirmados_agrupadosxedad <- confirmados_para_trabajar %>%
+  group_by(edad) %>%
+  summarise(n=n()) %>%
+  arrange(desc(n)) %>%
+  head(10)
+```
+
+
+
+
 
 
 
