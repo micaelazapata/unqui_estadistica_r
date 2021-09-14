@@ -1,5 +1,5 @@
 ---
-title: "Trabajo Final"
+title: "Variables asociadas a los fallecimientos por Covid-19. Año 2020, Región AMBA"
 author: "Bardauil, Ibarra, Zapata"
 date: "13/9/2021"
 output:
@@ -7,10 +7,10 @@ output:
     toc: true
     toc_float: true
     toc_depth: 5
+    theme: pape
 ---
 
-```{r setup, include=FALSE}
-{r setup, include=FALSE, warning=FALSE, message = FALSE, ERROR = FALSE}
+```{r setup, include=FALSE, warning=FALSE, message = FALSE, ERROR = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # Llamamos librerias
 
@@ -19,27 +19,47 @@ library(skimr)
 library("lubridate")
 library(nlme)
 library(dplyr)
-
 ```
 
 ## 1.[**Resumen**]{.ul}
 
-En el año 2020 una fuerte crisis sanitaria se originó por la aparición del virus SARCOV-2 y la propagación de la pandemia del COVID-19.Esta pandemia afecto la vida y la salud de la población a nivel mundial.En Argentina se han tomado diferentes medidas de aislamiento social, pero a pesar de ello, una buena parte de la población ha sido afectada, alcanzando a más de 100.000 casos de personas fallecidas.En este marco, nos interesa conocer quienes han sido las personas más vulnerables al no poder su superar la enfermedad, y encontrar algunas de las causas que podrían haber influido en su deceso.Se analizarán los factores que puedan afectar la tasa de fallecidos por COVID-19 (calculada en relación al total de casos de personas contagiadas en la región del AMBA).
+En el año 2020 una fuerte crisis sanitaria se originó por la aparición del virus SARCOV-2 y la propagación de la pandemia del COVID-19.Esta pandemia afecto la vida y la salud de la población a nivel mundial.En Argentina se han tomado diferentes medidas de aislamiento social pero, a pesar de ello, una buena parte de la población ha sido afectada, alcanzando más de 100.000 casos de personas fallecidas.En este marco, nos interesa conocer quienes han sido las personas más vulnerables al no poder su superar la enfermedad, y encontrar algunas de las variables que podrían haber influido en su deceso.Se analizarán los factores que puedan afectar la tasa de fallecidos por COVID-19 (calculada en relación al total de casos de personas contagiadas en diferentes localidades del AMBA).
 Se utilizará la base pública provista por el Ministerio de Salud de la Nación, sobre la situación de la COVID-19, disponible en: <https://datos.gob.ar/dataset/salud-covid-19-casos-registrados-republica-argentina/archivo/salud_fd657d02-a33a-498b-a91b-2ef1a68b8d16>.
-Esta base contiene información actualizada diariamente, a las 21:30 hs.
-notificando CASOS COVID-19 registrados en el país, con un corte del día a las 17:45 hs.La fecha de bajada de la base es 11 de agosto de 2021.Se indagará cómo está compuesta la base, sus dimensiones y los tipos de valores que componen cada variable.Se transformará para poder trabajarla, dado que se trata de un data set de grandes dimensiones.
-Para la etapa analítica, se generará una regresión, evaluando la medida en que diferentes variables independientes afectan a esa tasa y se explorarán como tales: la edad, el sexo, el momento en que se detectó la enfermedad, si la persona fue internada o no, si estuvo en cuidados intensivos o no y si tuvo asistencia respiratoria o no.
-En particular, para poder analizar el momento de contagio, se trabajará creará una variable que vincule la semana epidemiológica con el año correspondiente, dado que las semanas epidemiológicas se reinician cada año.
-Se analizarán modelos multivariados comparando la mejor aproximación de un modelo con efectos fijos y aleatorios.
+
+Esta base contiene información de actualización diaria, notificando CASOS COVID-19 registrados en el país.La fecha de bajada de la base es 11 de agosto de 2021 con un corte a las 17:45 hs.Se indagará cómo está compuesta la base, sus dimensiones y los tipos de valores que componen cada variable. La misma se delimitará y transformará para poder trabajarla, dado que se trata de un data set de grandes dimensiones.
+Para la etapa analítica, se generará una regresión, evaluando la medida en que diferentes variables independientes afectan a esa tasa y se explorarán como tales: la edad, el sexo, si la persona fue internada o no, si estuvo en cuidados intensivos o no y si tuvo asistencia respiratoria o no.
+En particular, para poder analizar el momento de contagio, se creará la variable que vincule la semana epidemiológica con el año correspondiente, de letalidad total del año 2020 por localidad.
+Se analizarán modelos multivariados comparando la mejor aproximación de un modelo con efectos fijos y aleatorios. [VER ESTO]
 
 ## 2. [**Estructura de los datos**]{.ul}
 
 La base covid-19 cuenta con 25 variables y 16.552.542 registros en total.
 Para posibilitar su procesamiento, se reducirá el análisis a los casos clasificados como "confirmados".
 **Eso reduce la cantidad de registros a 2.497.319**.
-Una vez establecido este recorte, se trabajará sobre los casos correspondientes al AMBA, lo que devuelve una base de 1.252.588 registros.Como parte del análisis exploratorio, hemos observado:
+Una vez establecido este recorte, se trabajará sobre los casos correspondientes al AMBA, lo que devuelve una base de 1.252.588 registros. Iniciamos la preparación de la base.  
 
-Las variables de la base, son:
+
+```{r Delimitacion}
+# Código de reducción de la base:
+# covid_confirmados <- covid %>% 
+#   filter(clasificacion_resumen == "Confirmado",
+#          residencia_provincia_nombre %in% c("Buenos Aires", "CABA"))
+
+# Posteriormente se grabó la nueva base dentro del R Proyect para poder trabajar directamente sobre ella y ahorrar costo de procesamiento:
+
+# readr::write_csv(covid_confirmados,
+#                  'covid_confirmados.csv')
+```
+
+```{r Base}
+# Llamado a la base de casos confirmados 
+covid_confirmados <- read_csv("covid_confirmados.csv")
+
+```
+
+
+Como parte del análisis exploratorio, hemos observado que las variables de la base, son:
+
 
 | **Título de la Columna**           | **Tipo de dato**       | **Descripción**                                                 |
 |------------------------------------|------------------------|-----------------------------------------------------------------|
@@ -67,3 +87,77 @@ Las variables de la base, son:
 | *residencia_provincia_id*          | integer                | Codigo de Provincia de Residencia                               |
 | *fecha_diagnostico*                | Tiempo ISO-8601 (time) | Fecha de diagnóstico                                            |
 | *residencia_departamento_id*       | integer                | Codigo departamento de residencia                               |
+
+Empezamos por delimitar las localidades con las que sí queremos trabajar, y que pertenecen al AMBA. 
+
+```{r DelimitacionA}
+confirmados_AMBA_filtro <- covid_confirmados %>% 
+  filter(residencia_departamento_nombre  %in% c('Almirante Brown', 
+                                                'Avellaneda', 'Berazatagui'
+                                                , 'Berisso', 'Brandsen', 
+                                                'Campana', 'Ca?uelas', 'Ensenada'
+                                                , 'Escobar', 'Esteban Echeverr?a',
+                                                'Exaltaci?n de la Cruz', 
+                                                'Ezeiza', 'Florencio Varela',
+                                                'General Las Heras', 
+                                                'General Rodr?guez', 
+                                                'General San Mart?n', 
+                                                'Hurlingham', 'Ituzaing?', 
+                                                'Jos? C. Paz', 'La Matanza', 
+                                                'Lan?s', 'La Plata', 
+                                                'Lomas de Zamora', 
+                                                'Luj?n', 'Marcos Paz',
+                                                'Malvinas Argentinas',
+                                                'Moreno', 'Merlo', 'Mor?n',
+                                                'Pilar', 'Presidente Per?n',
+                                                'Quilmes', 'San Fernando', 
+                                                'San Isidro', 
+                                                'San Miguel', 'San Vicente', 
+                                                'Tigre', 'Tres de Febrero', 
+                                                'Vicente L?pez','Z?rate',
+                                                'COMUNA 01', 'COMUNA 02',  
+                                                'COMUNA 03' ,'COMUNA 04',
+                                                'COMUNA 05','COMUNA 06','COMUNA 07', 
+                                                'COMUNA 08', 'COMUNA 09', 'COMUNA 10'
+                                                ,'COMUNA 11', 'COMUNA 12', 'COMUNA 13','COMUNA 14', 'COMUNA 15'))
+```
+
+Luego eliminamos los casos en que la localidad no ha sido especificada, y unificamos las comunas bajo el nombre "CABA", dejando el resto de las localidades con su nombre y seleccionamos las variables que vamos a usar.  
+
+```{r Limpieza2}
+confirmados_para_trabajar <- confirmados_AMBA_filtro %>%
+  filter(!residencia_departamento_nombre == "SIN ESPECIFICAR") %>%
+  mutate(localidad = case_when(residencia_departamento_nombre %in%
+                                 c('COMUNA 01', 'COMUNA 02',  
+                                   'COMUNA 03' ,'COMUNA 04',
+                                   'COMUNA 05','COMUNA 06','COMUNA 07', 
+                                   'COMUNA 08', 'COMUNA 09', 'COMUNA 10',
+                                   'COMUNA 11', 'COMUNA 12', 'COMUNA 13','COMUNA 14', 'COMUNA 15') ~ "CABA",
+                               TRUE ~ as.character(residencia_departamento_nombre))) %>%
+    select(localidad,residencia_departamento_nombre, edad, sexo, origen_financiamiento,
+         asistencia_respiratoria_mecanica, cuidado_intensivo, fecha_internacion,
+         sepi_apertura, fallecido,origen_financiamiento,fecha_apertura)
+```
+
+Exploramos el sub set de datos que generamos:  
+
+```{r Exploracion}
+summary(confirmados_para_trabajar)
+str(confirmados_para_trabajar)
+skim(confirmados_para_trabajar)
+```
+
+Eliminamos los NA y outlires de edad (seleccionar solo las que estan entre 0 y 100):
+
+```{r Outliers}
+confirmados_para_trabajar <-confirmados_para_trabajar %>%
+  filter (edad<105 & edad>-1)%>%
+  drop_na(edad) %>%
+  filter (sexo != 'NR')
+```
+
+
+
+
+
+
