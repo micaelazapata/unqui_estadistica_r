@@ -411,6 +411,31 @@ summary(modelo_lineal_5)
 
 ```
 
+
+El estar en cuidados intensivos y tener asistencia respiratoria mecánica reduce la tasa de mortalidad en 0,000001059 puntos. Y tambien hace reducir la incidencia edad promedio, pasando a 0,299. Es decir que la tasa de letalidad aumenta en 0.299 puntos por por aumento en un año de la persona infectada
+
+### Comparando el modelo 1 y 5:
+
+Teniendo en cuenta el R2 y el estadistico F de cada modelo, vemos que para el modelo 1 donde solo considerabamos la edad, el R explicaba el 45% de la variabilidad de los datos, con un estadistico F significativo.- En tanto, cuando incluimos la interacción que tiene en cuenta la cantidad de enfermos internados en CI con asistencia respiratoria mecánica # el R2 alcanza el 56% (crece más de 9 puntos) tambien con un F significativo
+
+Además, si comparamos los residuos de ambos modelos, vemos que en el modelo 5, los mismos se concentran más en torno  al 0, que lo que ocurre en el modelo uno.
+
+```{r}
+#Analisis de los residuos
+
+base_regresion_final%>%
+  mutate (residuo1 =(predict.lm(modelo_lineal)-base_regresion_final$ratio_fall_nofall))%>%
+  ggplot(aes(x=residuo1))+
+  geom_histogram()
+
+base_regresion_final%>%
+  mutate (residuo5 =(predict.lm(modelo_lineal_5)-base_regresion_final$ratio_fall_nofall))%>%
+  ggplot(aes(x=residuo5))+
+  geom_histogram()
+
+```
+ Como conclusión, asumimos que el modelo 5 explica mejor la tasa de letalidad de las localidades, el cual puede resumirse de la siguiente manera tasa de letalidad del covid = -9.206 +0.299*edad promedio de una localidad -0.00001059 personas internadas en CI con asistencia respiratoria
+
 En este sentido, el estar en cuidados intensivos y tener asitencia respiratoria mecanica reduce la tasa de mortalidad en 0,00000079 puntos.
 Y tambien hace reducir la incidencia la edad promedio, pasando a 0,307 puntos por un aumento en un 1% de la letalidad
 
@@ -419,14 +444,23 @@ Y tambien hace reducir la incidencia la edad promedio, pasando a 0,307 puntos po
 ```{r}
 anova(modelo_lineal, modelo_lineal_2, modelo_lineal_3, modelo_lineal_4, modelo_lineal_5)
 
-#¿cómo se entiende esto?
 ```
+Algunas predicciones.
 
-------------------------------------------------------------------------
+Predecimos un modelo en el que suponemos que una localidad tiene 3 veces más de internados con asistencia respiratoria para evaluar cual seria la tasa de letalidad de una localidad
+
+* CASO 1: Un municipio donde la edad promedio de los infectados es de 60, la cantidad de internados en CI con asistencia respiratoria mecanica es de 700 personas #la tasa de letalidad llegaria al 8.7 puntos (Tasa de letalidad= -9.206 +0.299*60 -0.00001059*700). Es decir, casi 9 de cada 100 infectados fallecerian por la enfermedad
+
+* CASO 2: Si los que llegan a terapia intensiva fueran de 3 veces mas, es decir 21000, la tasa de letalidad llegaria a 8.51, es decir baja en apenas 0.2 puntos cada 100 infectados los fallecidos por la enfermedad
+
+* CASO 3: En tanto, si consideramos un municipio que aumenta la edad de los infectados, de 60 a 70, la tasa de letalidad asciende a 11.7 fallecidos cada 100 habitantes.
+
+Estos datos muestran que una estrategia más eficiente para aminorar la letalidad de la enfermedad es el cuidado de las personas mayores, que son las más vulnerables, y que son pocos los cambios que se pueden lograr aumentando las camas de cuidado intensivo y la asistencia respiratoria, dando cuentas de que quizá una vez avanzada la enfermedad la posibilidad de sobrevivir son bajas.  
+
+ ------------------------------------------------------------------------
 
 ## 7.[**Conclusiones**]{.ul}
 
-La tasa de letalidad solo depende positivamente de la edad de las personas, y negativamente de haber estado internado en cuidados intensivos con respirador.
-Las internaciones sin asistencia respiratoria no cambian la tasa de letalidad de los municipios, al igual que no hay diferencia entre el género de las personas.En línea, tampoco se distinguen diferencias entre aquellos que con ingresos más altos pueden acceder al sistema de salud privado
+La tasa de letalidad solo depende positivamente de la edad de las personas, y negativamente de haber estado internado en cuidados intensivos con respirador. Las internaciones sin asistencia respiratoria no cambian la tasa de letalidad de los municipios, al igual que no hay diferencia entre el género de las personas.En línea, tampoco se distinguen diferencias entre aquellos que con ingresos más altos pueden acceder al sistema de salud privado
 
 Por lo tanto, la edad es el factor clave que explica la tasa de letalidad de los municipios, y la internacion con asistencia repiratoria mecanica tiende a reducir en una pequeña medida dicha tasa de letalidad.
