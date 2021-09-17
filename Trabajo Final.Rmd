@@ -8,6 +8,8 @@ output:
     toc_float: true
     toc_depth: 5
     theme: paper
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE, warning=FALSE, message = FALSE, ERROR = FALSE}
@@ -16,22 +18,23 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(skimr)
-library("lubridate")
+library(lubridate)
 library(nlme)
 library(dplyr)
 library(harrypotter)
+library(stringr)
 ```
 
-## 1.[**Resumen**]{.ul}
+## 1.[**Introducción**]{.ul}
 
 En el año 2020 una fuerte crisis sanitaria se originó por la aparición del virus SARCOV-2 y la propagación de la pandemia del COVID-19.Esta pandemia afecto la vida y la salud de la población a nivel mundial.En Argentina se han tomado diferentes medidas de aislamiento social pero, a pesar de ello, una buena parte de la población ha sido afectada, alcanzando más de 100.000 casos de personas fallecidas.En este marco, nos interesa conocer quienes han sido las personas más vulnerables al no poder su superar la enfermedad, y encontrar algunas de las variables que podrían haber influido en su deceso.Se analizarán los factores que puedan afectar la tasa de fallecidos por COVID-19 (calculada en relación al total de casos de personas contagiadas en diferentes localidades del AMBA).
 Se utilizará la base pública provista por el Ministerio de Salud de la Nación, sobre la situación de la COVID-19, disponible en: <https://datos.gob.ar/dataset/salud-covid-19-casos-registrados-republica-argentina/archivo/salud_fd657d02-a33a-498b-a91b-2ef1a68b8d16>.
 
-Esta base contiene información de actualización diaria, notificando CASOS COVID-19 registrados en el país.La fecha de bajada de la base es 11 de agosto de 2021 con un corte a las 17:45 hs.Se indagará cómo está compuesta la base, sus dimensiones y los tipos de valores que componen cada variable.
-La misma se delimitará y transformará para poder trabajarla, dado que se trata de un data set de grandes dimensiones.
-Para la etapa analítica, se generará una regresión, evaluando la medida en que diferentes variables independientes afectan a esa tasa y se explorarán como tales: la edad, el sexo, si la persona fue internada o no, si estuvo en cuidados intensivos o no y si tuvo asistencia respiratoria o no.
-En particular, para poder analizar el momento de contagio, se creará la variable que vincule la semana epidemiológica con el año correspondiente, de letalidad total del año 2020 por localidad.
-Se analizarán modelos multivariados comparando la mejor aproximación de un modelo con efectos fijos y aleatorios.
+Esta base contiene información de actualización diaria, notificando CASOS COVID-19 registrados en el país. La fecha de descarga de la base es 11 de agosto de 2021 con un corte a las 17:45 hs.Se indagará cómo está compuesta la base, sus dimensiones y los tipos de valores que conforman cada variable. 
+La misma se delimitará y transformará para poder trabajarla, dado que se trata de un data set de grandes dimensiones. 
+ Para la etapa analítica, se generará una regresión, evaluando la medida en que diferentes variables independientes afectaron a esa tasa y se explorarán como tales: la edad, el sexo, si la persona fue internada en cuidados intensivos o no, si tuvo asistencia respiratoria o no y si fue atendida en el sistema público o privado de salud.
+Como variable dependiente, se calculará la tasa de letalidad por cada jurisdicción del AMBA, como resultado del cociente de personas que han fallecido en relación a las personas que se han contagiado, multiplicado por 100.
+Se analizarán modelos multivariados de efectos fijos y se evaluará la capacidad explicativa de sus diferentes variables y sus interacciones.  
 
 
 ## 2. [**Estructura de los datos**]{.ul}
@@ -174,7 +177,7 @@ str(confirmados_para_trabajar)
 skim(confirmados_para_trabajar)
 ```
 
-Eliminamos los NA y outlires de edad (seleccionar solo las que estan entre 0 y 100):
+Eliminamos los NA y outliers de edad para seleccionar sólo las que están entre -1 (bebes) y 105 años:
 
 ```{r Outliers}
 confirmados_para_trabajar <-confirmados_para_trabajar %>%
@@ -190,7 +193,7 @@ rm(confirmados_AMBA_filtro)
 
 ## 3.[**Análisis descriptivo**]{.ul}
 
-Realizamos un análisis de las variables más relevantes, descriviendo contagios y fallecimientos por edad, sexo y localidad.
+Realizamos un análisis de las variables más relevantes, describiendo contagios y fallecimientos por edad, sexo y localidad.
 
 ```{r Desciptivo1}
 # Fallecidos/as por edad
@@ -205,7 +208,8 @@ Fallecidos_agrupadosxedad <- confirmados_para_trabajar %>%
   group_by(edad) %>%
   summarise(n = n()) %>%
   arrange(desc(n)) %>%
-  head(30)
+  head(10)
+Fallecidos_agrupadosxedad
 
 distribucion_contagiados_edad <- confirmados_para_trabajar %>%
   ggplot(aes(x=edad)) +
@@ -220,17 +224,17 @@ confirmados_agrupadosxedad <- confirmados_para_trabajar %>%
 ```
 
 Se observa que la edad de mayor de contagio se da entre los *26 y 35 años*.
-Y, la mayor cantidad de contagiados, en los *29 y 30 años*, con más de *34 mil contagiados*.Sin embargo, los más afectados por la enfermedad son aquellos de mayor edad, dandose la mayor cantidad de fallecidos entre los 70 y 80 años, con el mayor pico en los *77 años* con *969 fallecidos*, siguiendole muy de cerca la edad de *73 años* con *656 fallecidos*
+Y, la mayor cantidad de contagiados, en los *29 y 30 años*, con más de *34 mil contagiados*. Sin embargo, los más afectados por la enfermedad son aquellos de mayor edad, dandose la mayor cantidad de fallecidos entre los 70 y 80 años, con el mayor pico en los *77 años* con *969 fallecidos*, siguiendole muy de cerca la edad de *73 años* con *656 fallecidos*.
 
 ```{r}
-confirmados_agrupadosxlocalidad<-confirmados_para_trabajar%>%
-  group_by(localidad)%>%
-  summarise(n=n())%>%
-  arrange(desc(n))%>%
+confirmados_agrupadosxlocalidad <- confirmados_para_trabajar %>%
+  group_by(localidad) %>%
+  summarise(n=n()) %>%
+  arrange(desc(n)) %>%
   head(10)
 ```
 
-Se observa que **las localidades con mayor tasa de contagios son CABA y la matanza**, seguidos por **La Plata y Quilmes**. No obstante, coinciden con ser las localidades de mayor población.
+Se observa que **las localidades con mayor tasa de contagios son CABA y la Matanza**, seguidos por **La Plata y Quilmes**. No obstante, coinciden con ser las localidades de mayor población.
 
 ```{r}
 Fallecidos_agrupadosxlocalidad<-confirmados_para_trabajar%>%
@@ -239,48 +243,50 @@ Fallecidos_agrupadosxlocalidad<-confirmados_para_trabajar%>%
   summarise(n=n())%>%
   arrange(desc(n))%>%
   head(10)
-
 ```
 
-Las localidades con mayor tasa de fallecidos, conciden con las de mayores casos,pero el ranking es diferente siendo *la Matanza* la localidad con mayor fallecidos, seguidos por *CABA,la Plata y Quilmes*.
-Cabe destacar que el salto que se produce entre las dos primeras es mucho menos que el que se observa en los contagiados.
-Mientras que la brecha entre el 3er puesto y el primero en numero de contagiados es del *30%*, entre las mismas localidades,la relacion entre *CABA* y Quilmes es del *56%*, lo que muestra una tasa de letalidad diferente entre ellas.
-Es por ello que en el trabajo vamos a analizar los factores que explican estas diferentes tasas de letalidad entre las localidades
+Las localidades con mayor tasa de fallecidos, conciden con las de mayores casos,pero el ranking es diferente siendo *La Matanza* la localidad con mayor cantidad de decesos, seguidos por *CABA,La Plata y Quilmes*. 
+Cabe destacar que el salto que se produce entre las dos primeras es mucho menor que el que se observa en los contagiados. 
+Mientras que la brecha entre el 3er puesto y el 1ro en número de contagiados es del *30%*, entre las mismas localidades,la relación entre CABA y Quilmes es del *56%*, lo que muestra una tasa de letalidad diferente entre ellas. 
+Es por ello que en el trabajo vamos a analizar los factores que explican estas diferentes tasas de letalidad entre las localidades. 
 
-    ------------------------------------------------------------------------
 
 ## 4.[**Analizando las olas de contagio**]{.ul}
 
 ### *Semana epidemiologica para ver las olas de contagio*
 
 ```{r}
-confirmados_para_trabajar <-confirmados_para_trabajar %>% 
-    mutate(anio = year(fecha_apertura)) %>% 
-    mutate(sepi_anio = paste(anio,sepi_apertura, sep = "_"))
+# confirmados_para_trabajar <- confirmados_para_trabajar %>% 
+#   mutate(anio_c = year(fecha_apertura)) %>% 
+#   mutate(anio = str_extract(anio_c, "\\d{2}$")) %>% 
+#   mutate(sepi_apertura_c = case_when(sepi_apertura %in% c(1,2,3,4,5,6,7,8,9) ~ paste("0", sepi_apertura)), ~ sepi_apertura) %>% 
+#   mutate(sepi_anio = paste(anio,sepi_apertura, sep = "."))
+
 ```
 
 ### *¿Cuales fueron las olas de mayores contagiados y fallecidos en el AMBA?*
 
 ```{r}
 confirmados_para_trabajar %>%
-   group_by(sepi_anio, fallecido)%>%
-    arrange(desc(sepi_anio))%>%
-ggplot(aes(x=sepi_anio, y=fallecido, fill=fallecido))+
+  group_by(sepi_anio, fallecido)%>%
+  arrange(desc(sepi_anio))%>%
+  ggplot(aes(x=sepi_anio, y=fallecido, fill=fallecido))+
   geom_col()+
   labs(title = "Casos confirmados de Covid-19",
        x = "Semana epidemiologica",
-       y = "cantidad de casos")
+       y = "cantidad de casos") +
+  theme(text = element_text(size=8),
+        axis.text.x = element_text(angle=90, hjust=1)) 
 
 confirmados_xsemanaepi<-confirmados_para_trabajar%>%
   group_by(sepi_anio)%>%
-    summarise(n=n())%>%
+  summarise(n=n())%>%
   arrange(desc (n))%>%
   head(10)
 
 ```
 
-Las semanas de mayor contagio se dieron en el 2021, en particular las semanas *14,15y 16*.
-Esto se dio entre el *28 de marzo* y el *10 de abril*
+Las semanas de mayor contagio se dieron en el 2021, en particular las semanas *14, 15 y 16*. Esto se dio entre el *28 de marzo* y el *10 de abril*.  
 
 ```{r}
 confirmados_para_trabajar %>%
@@ -291,13 +297,16 @@ confirmados_para_trabajar %>%
   geom_col()+
   labs(title = "Casos confirmados de Covid-19",
        x = "Semana epidemiologica",
-       y = "cantidad de casos")
+       y = "cantidad de casos") +
+  theme(text = element_text(size=8),
+        axis.text.x = element_text(angle=90, hjust=1)) 
+
   
-  fallecidos_xsemanaepi<-confirmados_para_trabajar%>%
-    filter(fallecido=="SI")%>%
-    group_by(sepi_anio)%>%
-    summarise(n=n())%>%
-    arrange(desc (n))%>%
+  fallecidos_xsemanaepi <- confirmados_para_trabajar %>%
+    filter(fallecido=="SI") %>%
+    group_by(sepi_anio) %>%
+    summarise(n=n()) %>%
+    arrange(desc (n)) %>%
     head(10)
 ```
 
