@@ -247,7 +247,7 @@ Fallecidos_agrupadosxlocalidad<-confirmados_para_trabajar%>%
 
 Las localidades con mayor tasa de fallecidos, conciden con las de mayores casos,pero el ranking es diferente siendo *La Matanza* la localidad con mayor cantidad de decesos, seguidos por *CABA,La Plata y Quilmes*. 
 Cabe destacar que el salto que se produce entre las dos primeras es mucho menor que el que se observa en los contagiados. 
-Mientras que la brecha entre el 3er puesto y el 1ro en número de contagiados es del *30%*, entre las mismas localidades,la relación entre CABA y Quilmes es del *56%*, lo que muestra una tasa de letalidad diferente entre ellas. 
+Mientras que la brecha entre el 3er puesto y el 1ro en número de contagiados es del *30%*, entre las mismas localidades,la relación en la tasa de letalidad es del *56%*, lo que muestra que una mayor cantidad de contagio no se relaciona proporcionalmente con una mayor cantidad de fallecidos
 Es por ello que en el trabajo vamos a analizar los factores que explican estas diferentes tasas de letalidad entre las localidades. 
 
 
@@ -256,11 +256,12 @@ Es por ello que en el trabajo vamos a analizar los factores que explican estas d
 ### *Semana epidemiologica para ver las olas de contagio*
 
 ```{r}
-# confirmados_para_trabajar <- confirmados_para_trabajar %>% 
-#   mutate(anio_c = year(fecha_apertura)) %>% 
-#   mutate(anio = str_extract(anio_c, "\\d{2}$")) %>% 
-#   mutate(sepi_apertura_c = case_when(sepi_apertura %in% c(1,2,3,4,5,6,7,8,9) ~ paste("0", sepi_apertura)), ~ sepi_apertura) %>% 
-#   mutate(sepi_anio = paste(anio,sepi_apertura, sep = "."))
+ confirmados_para_trabajar <- confirmados_para_trabajar %>% 
+   mutate(anio_c = year(fecha_apertura)) %>% 
+   mutate(anio = str_extract(anio_c, "\\d{2}$")) %>% 
+   mutate(sepi_apertura_c = case_when(sepi_apertura %in%                c(1,2,3,4,5,6,7,8,9) ~ paste("0", sepi_apertura), TRUE ~ as.character(sepi_apertura)))%>%
+   mutate(sepi_anio = paste(anio,sepi_apertura_c, sep = "."))%>%
+ mutate(sepi_anio = paste(anio,sepi_apertura_c, sep = "_"))
 
 ```
 
@@ -328,10 +329,12 @@ La semana epidemiologia de mayor fallecimiento se dan entre *15 y 16* con más d
 ### ¿cuales son los municipios que han registrado la mayor tasa de letalidad?
 
 ```{r}
-confirmados_AMBA_xdepto %>%
+ranking_tasa_letalidad <- confirmados_AMBA_xdepto %>%
   arrange(desc(ratio_fall_nofall))%>%
   head(10)
 ```
+
+Al analizar la tasa de letalidad, aparecen como los municipios más impactados: *Almirante Brown* con 3.26 fallecidos cada 100 contagiados, siguiendoles *La Plata* y *Quilmes*, con 3.25 y 3.19. CABA sale del ranking de los municipios más afectados, lo que muestra que a pesar de la mayor cantidad de contagiados y fallecidos en esta localidad, la tasa de letalidad ha sido baja en relación a otras. Las más afectadas por al pandemia han sido *Quilmes* y *La Plata*, quienes no solo mostraban una mayor cantidad de contagiados y fallecidos, sino también una mayor tasa de letalidad. Por otro lado, *Almirante Brown* Una localidad más chica, ha sido altamente afectada por la pandemia. 
 
   ------------------------------------------------------------------------
 
@@ -343,6 +346,7 @@ covid_confirmados_pararegresion <- confirmados_para_trabajar %>%
     summarise(edad_promedio=mean(edad,na.rm=TRUE),
                                  Q_M=sum(sexo=="F")/n(),
                                  Q_H=sum(sexo=="M")/n(),
+              ratioM_H=sum(sexo=="F")/sum(sexo=="M"),
                                  Q_respirador=sum(asistencia_respiratoria_mecanica=="SI"),
                                  Q_fin_privado=sum(origen_financiamiento=="Privado"), 
                                  Q_fin_publico=sum(origen_financiamiento=="Público"),
@@ -356,7 +360,7 @@ left_join(confirmados_AMBA_xdepto, by = "localidad")
 
 
 modelo_lineal <- base_regresion_final %>%
-  lm(ratio_fall_nofall ~ edad_promedio+Q_M+Q_H+ Q_fin_privado + Q_fin_publico + Q_respirador + Q_cuidadoIntensivo , .)
+  lm(ratio_fall_nofall ~ edad_promedio+ratioM_H+ Q_fin_privado + Q_fin_publico + Q_respirador + Q_cuidadoIntensivo , .)
 
 summary(modelo_lineal)
 base_regresion_final %>%
@@ -374,46 +378,43 @@ base_regresion_final %>%
   geom_smooth(method = lm)
 
 ```
-
+Para analizar el sexo, se opto por la variable ratio mujeres en relación a los hombres, dado que si se coloca por separado, el modelo muestra multicolinealidad entre las variables. 
 La tasa de letalidad por municipio esta asociada a la edad de las personas contagiadas pero no guarda relación con el resto de las variables.
-Los resultados indican que la tasa de letalidad por municipio aumenta en *0,37* puntos cuando aumenta en un año la edad del infectad.
+Los resultados indican que la tasa de letalidad por municipio aumenta en *0,36* puntos cuando aumenta en un año la edad del infectado.
 Retomando lo visto anteriormente, los municipios con mayor tasa de letalidad seran aquellos que presenten una población de infectados mas envejecida
 
 ```{r}
 # se probará el analisis interactuando la edad y el sexo de lso
 modelo_lineal_2 <- base_regresion_final %>%
-  lm(ratio_fall_nofall ~ edad_promedio + Q_M + Q_H +Q_respirador+Q_cuidadoIntensivo + 
-                          Q_M * edad_promedio +  Q_H * edad_promedio, .)
+  lm(ratio_fall_nofall ~ edad_promedio + ratioM_H + Q_respirador+Q_cuidadoIntensivo + ratioM_H * edad_promedio, .)
      
 summary(modelo_lineal_2)  
 ```
 
-Los resultados no cambian cuando el analisis se hace interactuando.
-La edad con el sexo de los infectados. Con lo cual se asume que la tasa de letalidad. No esta vinculada con las personas mayores de diferente género.
+Los resultados no cambian cuando el analisis se hace interactuando la edad con el sexo de los infectados. Con lo cual se asume que la tasa de letalidad, no esta vinculada con las personas mayores de diferente género.
 
 ```{r}
 modelo_lineal_3 <- base_regresion_final %>%
-  lm(ratio_fall_nofall ~ edad_promedio + Q_M + Q_H +Q_respirador+Q_cuidadoIntensivo + 
+  lm(ratio_fall_nofall ~ edad_promedio + ratioM_H +Q_respirador+Q_cuidadoIntensivo + 
        Q_cuidadoIntensivo * edad_promedio +  Q_cuidadoIntensivo * edad_promedio, .)
 
 summary(modelo_lineal_3)
 ```
 
-La interacción entre edad y el haber estado en cuidados intensivos, no es significativa. Es decir, la tasa de letalidad por municipio no cambia si en el municipio hay más personas internadas en cuidados intensivos.
+La interacción entre edad y el haber estado en cuidados intensivos, no es significativa. Es decir, la tasa de letalidad por municipio no cambia si en el municipio hay más personas de mayor edad internadas en cuidados intensivos.
 
 ```{r}
 modelo_lineal_4 <-base_regresion_final%>%
-  lm(ratio_fall_nofall ~ edad_promedio + Q_H + Q_M +Q_respirador+Q_cuidadoIntensivo + 
-      +  Q_cuidadoIntensivo * Q_H   +  Q_cuidadoIntensivo * Q_M, .)
+  lm(ratio_fall_nofall ~ edad_promedio + ratioM_H +Q_respirador+Q_cuidadoIntensivo  +  Q_cuidadoIntensivo * ratioM_H,.)
 
 summary(modelo_lineal_4)
 ```
 
-Del mismo modo, tampoco ser hombre o mujer afecta la tasa de letalidad, con el hecho de haber pasado por cuidado intensivos
+Del mismo modo, tampoco ser hombre o mujer afecta la tasa de letalidad, habiendo pasado por cuidado intensivos
 
 ```{r}
 modelo_lineal_5 <-base_regresion_final%>%
-  lm(ratio_fall_nofall ~ edad_promedio + Q_H + Q_M +Q_respirador+Q_cuidadoIntensivo + 
+  lm(ratio_fall_nofall ~ edad_promedio + ratioM_H +Q_respirador+Q_cuidadoIntensivo + 
        +  Q_cuidadoIntensivo * Q_respirador, .)
 
 summary(modelo_lineal_5)
@@ -421,11 +422,11 @@ summary(modelo_lineal_5)
 ```
 
 
-El estar en cuidados intensivos y tener asistencia respiratoria mecánica reduce la tasa de mortalidad en 0,000001059 puntos. Y tambien hace reducir la incidencia edad promedio, pasando a 0,299. Es decir que la tasa de letalidad aumenta en 0.299 puntos por por aumento en un año de la persona infectada
+Este ultimo modelo testeado, muestra que el estar en cuidados intensivos y tener asistencia respiratoria mecánica reduce la tasa de mortalidad en 0,00000201 puntos. Y tambien hace reducir la incidencia edad promedio, pasando a 0,292, y el intercepeto pasa a ser -9.68. 
 
 ### Comparando el modelo 1 y 5:
 
-Teniendo en cuenta el R2 y el estadistico F de cada modelo, vemos que para el modelo 1 donde solo considerabamos la edad, el R explicaba el 45% de la variabilidad de los datos, con un estadistico F significativo.- En tanto, cuando incluimos la interacción que tiene en cuenta la cantidad de enfermos internados en CI con asistencia respiratoria mecánica # el R2 alcanza el 56% (crece más de 9 puntos) tambien con un F significativo
+Teniendo en cuenta el R2 ajustado y el estadistico F de cada modelo, vemos que para el modelo 1 donde solo considerabamos la edad, el R explicaba el 41% de la variabilidad de los datos, con un estadistico F significativo.- En tanto, cuando incluimos la interacción que tiene en cuenta la cantidad de enfermos internados en CI con asistencia respiratoria mecánica # el R2 alcanza el 56% (crece 15 puntos) tambien con un F significativo
 
 Además, si comparamos los residuos de ambos modelos, vemos que en el modelo 5, los mismos se concentran más en torno  al 0, que lo que ocurre en el modelo uno.
 
@@ -443,33 +444,26 @@ base_regresion_final%>%
   geom_histogram()
 
 ```
- Como conclusión, asumimos que el modelo 5 explica mejor la tasa de letalidad de las localidades, el cual puede resumirse de la siguiente manera tasa de letalidad del covid = -9.206 +0.299*edad promedio de una localidad -0.00001059 personas internadas en CI con asistencia respiratoria
+ Como conclusión, asumimos que el modelo 5 explica mejor la tasa de letalidad de las localidades, el cual puede resumirse de la siguiente manera tasa de letalidad del covid = -9.682 +0.293*edad promedio de una localidad -0.000008201 personas internadas en CI con asistencia respiratoria
 
-En este sentido, el estar en cuidados intensivos y tener asitencia respiratoria mecanica reduce la tasa de mortalidad en 0,00000079 puntos.
-Y tambien hace reducir la incidencia la edad promedio, pasando a 0,307 puntos por un aumento en un 1% de la letalidad
 
-### **Vamos a comparar los 4 modelos analizados**
-
-```{r}
-anova(modelo_lineal, modelo_lineal_2, modelo_lineal_3, modelo_lineal_4, modelo_lineal_5)
-
-```
 Algunas predicciones.
 
 Predecimos un modelo en el que suponemos que una localidad tiene 3 veces más de internados con asistencia respiratoria para evaluar cual seria la tasa de letalidad de una localidad
 
-* CASO 1: Un municipio donde la edad promedio de los infectados es de 60, la cantidad de internados en CI con asistencia respiratoria mecanica es de 700 personas #la tasa de letalidad llegaria al 8.7 puntos (Tasa de letalidad= -9.206 +0.299*60 -0.00001059*700). Es decir, casi 9 de cada 100 infectados fallecerian por la enfermedad
+* CASO 1: Un municipio donde la edad promedio de los infectados es de 60, la cantidad de internados en CI con asistencia respiratoria mecanica es de 700 personas #la tasa de letalidad llegaria al 7.9 puntos (Tasa de letalidad= -9.682 +0.293*60 -0.0000082*700). Es decir, casi 8 de cada 100 infectados fallecerian por la enfermedad
 
-* CASO 2: Si los que llegan a terapia intensiva fueran de 3 veces mas, es decir 21000, la tasa de letalidad llegaria a 8.51, es decir baja en apenas 0.2 puntos cada 100 infectados los fallecidos por la enfermedad
 
-* CASO 3: En tanto, si consideramos un municipio que aumenta la edad de los infectados, de 60 a 70, la tasa de letalidad asciende a 11.7 fallecidos cada 100 habitantes.
+* CASO 2: Si los que llegan a terapia intensiva fueran de 3 veces mas, es decir 21000, la tasa de letalidad llegaria a 7.72, es decir baja en apenas 0.2 puntos cada 100 infectados los fallecidos por la enfermedad
 
-Estos datos muestran que una estrategia más eficiente para aminorar la letalidad de la enfermedad es el cuidado de las personas mayores, que son las más vulnerables, y que son pocos los cambios que se pueden lograr aumentando las camas de cuidado intensivo y la asistencia respiratoria, dando cuentas de que quizá una vez avanzada la enfermedad la posibilidad de sobrevivir son bajas.  
+* CASO 3: En tanto, si consideramos un municipio que aumenta la edad de los infectados, de 60 a 70, la tasa de letalidad asciende a 10.8 fallecidos cada 100 habitantes.
+
+Estos datos muestran que una estrategia más eficiente para aminorar la letalidad de la enfermedad es el cuidado de las personas mayores, que son las más vulnerables, y que son pocos los cambios que se pueden lograr aumentando las camas de cuidado intensivo y la asistencia respiratoria. De ello, puede suponerse que las condiciones de base son más importantes, y una vez avanzada la enfermedad la posibilidad de sobrevivir son bajas.  
 
  ------------------------------------------------------------------------
 
 ## 7.[**Conclusiones**]{.ul}
 
-La tasa de letalidad solo depende positivamente de la edad de las personas, y negativamente de haber estado internado en cuidados intensivos con respirador. Las internaciones sin asistencia respiratoria no cambian la tasa de letalidad de los municipios, al igual que no hay diferencia entre el género de las personas.En línea, tampoco se distinguen diferencias entre aquellos que con ingresos más altos pueden acceder al sistema de salud privado
+La tasa de letalidad solo depende positivamente de la edad de las personas, y negativamente por haber estado internado en cuidados intensivos con respirador. Las internaciones en cuidados intensivos sin asistencia respiratoria no cambian la tasa de letalidad de los municipios, al igual que no hay diferencia entre el género de las personas. Tampoco se distinguen diferencias entre aquellos que con ingresos más altos pudieron acceder al sistema de salud privado
 
-Por lo tanto, la edad es el factor clave que explica la tasa de letalidad de los municipios, y la internacion con asistencia repiratoria mecanica tiende a reducir en una pequeña medida dicha tasa de letalidad.
+Por lo tanto, la edad es el factor clave que explica la tasa de letalidad de los municipios, y la internacion con asistencia repiratoria mecanica tiende a reducir en una pequeña medida dicha tasa de letalidad, de manera poco significativa. Por lo tanto, una vez contraida la enfermedad, y habiendo avanzado significativamente, la ayuda con la respiración asistida no cambia la tendencia evolutiva de la enfermedad. De ello puede suponerse que los enfermos llegan muy tarde a la instancia de cuidados intensivos, o bien el trtamiento no es una estrategia adecuada para revertir los casos más graves
