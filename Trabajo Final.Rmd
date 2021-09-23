@@ -23,6 +23,7 @@ library(nlme)
 library(dplyr)
 library(harrypotter)
 library(stringr)
+library(kableExtra)
 ```
 
 ## 1.[**Introducción**]{.ul}
@@ -336,10 +337,10 @@ confirmados_AMBA_xdepto <- confirmados_para_trabajar %>%
 ranking_tasa_letalidad <- confirmados_AMBA_xdepto %>%
   arrange(desc(ratio_fall_nofall))%>%
   head(10)
-ranking_tasa_letalidad
+knitr::kable(ranking_tasa_letalidad)
 ```
 
-Al analizar la tasa de letalidad, aparecen como los municipios más impactados: *Almirante Brown* con 3.26 fallecidos cada 100 contagiados, siguiendoles *La Plata* y *Quilmes*, con 3.25 y 3.19. CABA sale del ranking de los municipios más afectados, lo que muestra que a pesar de la mayor cantidad de contagiados y fallecidos en esta localidad, la tasa de letalidad ha sido baja en relación a otras. Las más afectadas por al pandemia han sido *Quilmes* y *La Plata*, quienes no solo mostraban una mayor cantidad de contagiados y fallecidos, sino también una mayor tasa de letalidad. Por otro lado, *Almirante Brown* Una localidad más chica, ha sido altamente afectada por la pandemia. 
+Al analizar la tasa de letalidad, aparecen como los municipios más impactados: *Almirante Brown* con 3.217 fallecidos cada 100 contagiados, siguiendoles *La Plata* y *Quilmes*, con 3.225 y 3.115. CABA sale del ranking de los municipios más afectados, lo que muestra que a pesar de la mayor cantidad de contagiados y fallecidos en esta localidad, la tasa de letalidad ha sido baja en relación a otras. Las más afectadas por al pandemia han sido *Quilmes* y *La Plata*, quienes no solo mostraban una mayor cantidad de contagiados y fallecidos, sino también una mayor tasa de letalidad. Por otro lado, *Almirante Brown* Una localidad más chica, ha sido altamente afectada por la pandemia. 
 
   ------------------------------------------------------------------------
 
@@ -415,7 +416,7 @@ modelo_lineal_4 <-base_regresion_final%>%
 summary(modelo_lineal_4)
 ```
 
-Del mismo modo, tampoco ser hombre o mujer afecta la tasa de letalidad, habiendo pasado por cuidado intensivos
+Del mismo modo, tampoco ser hombre o mujer afecta la tasa de letalidad, habiendo pasado por cuidado intensivos.
 
 ```{r}
 modelo_lineal_5 <-base_regresion_final%>%
@@ -440,12 +441,12 @@ Además, si comparamos los residuos de ambos modelos, vemos que en el modelo 5, 
 
 base_regresion_final%>%
   mutate(residuo1 = (predict.lm(modelo_lineal)-base_regresion_final$ratio_fall_nofall))%>%
-  ggplot(aes(x=residuo1))+
+  ggplot(aes(x = residuo1))+
   geom_histogram()
 
 base_regresion_final%>%
   mutate (residuo5 = (predict.lm(modelo_lineal_5)-base_regresion_final$ratio_fall_nofall))%>%
-  ggplot(aes(x = residuo5))+
+  ggplot(aes(x = residuo5)) +
   geom_histogram()
 
 ```
