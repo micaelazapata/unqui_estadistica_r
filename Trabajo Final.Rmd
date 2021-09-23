@@ -221,6 +221,7 @@ confirmados_agrupadosxedad <- confirmados_para_trabajar %>%
   summarise(n=n()) %>%
   arrange(desc(n)) %>%
   head(10)
+confirmados_agrupadosxedad
 ```
 
 Se observa que la edad de mayor de contagio se da entre los *26 y 35 años*.
@@ -232,20 +233,22 @@ confirmados_agrupadosxlocalidad <- confirmados_para_trabajar %>%
   summarise(n=n()) %>%
   arrange(desc(n)) %>%
   head(10)
+confirmados_agrupadosxlocalidad
 ```
 
 Se observa que **las localidades con mayor tasa de contagios son CABA y la Matanza**, seguidos por **La Plata y Quilmes**. No obstante, coinciden con ser las localidades de mayor población.
 
 ```{r}
-Fallecidos_agrupadosxlocalidad<-confirmados_para_trabajar%>%
-  filter(fallecido=="SI")%>%
-  group_by(localidad)%>%
-  summarise(n=n())%>%
-  arrange(desc(n))%>%
+Fallecidos_agrupadosxlocalidad <- confirmados_para_trabajar %>%
+  filter(fallecido=="SI") %>%
+  group_by(localidad) %>%
+  summarise(n=n()) %>%
+  arrange(desc(n)) %>%
   head(10)
+Fallecidos_agrupadosxlocalidad
 ```
 
-Las localidades con mayor tasa de fallecidos, conciden con las de mayores casos,pero el ranking es diferente siendo *La Matanza* la localidad con mayor cantidad de decesos, seguidos por *CABA,La Plata y Quilmes*. 
+Las localidades con mayor **tasa de fallecidos**, conciden con las de mayores casos,pero el ranking es diferente siendo *La Matanza* la localidad con mayor cantidad de decesos, seguidos por *CABA,La Plata y Quilmes*. 
 Cabe destacar que el salto que se produce entre las dos primeras es mucho menor que el que se observa en los contagiados. 
 Mientras que la brecha entre el 3er puesto y el 1ro en número de contagiados es del *30%*, entre las mismas localidades,la relación en la tasa de letalidad es del *56%*, lo que muestra que una mayor cantidad de contagio no se relaciona proporcionalmente con una mayor cantidad de fallecidos
 Es por ello que en el trabajo vamos a analizar los factores que explican estas diferentes tasas de letalidad entre las localidades. 
@@ -253,49 +256,50 @@ Es por ello que en el trabajo vamos a analizar los factores que explican estas d
 
 ## 4.[**Analizando las olas de contagio**]{.ul}
 
-### *Semana epidemiologica para ver las olas de contagio*
+### Semana epidemiologica para ver las olas de contagio
 
 ```{r}
- confirmados_para_trabajar <- confirmados_para_trabajar %>% 
-   mutate(anio_c = year(fecha_apertura)) %>% 
-   mutate(anio = str_extract(anio_c, "\\d{2}$")) %>% 
-   mutate(sepi_apertura_c = case_when(sepi_apertura %in%                c(1,2,3,4,5,6,7,8,9) ~ paste("0", sepi_apertura), TRUE ~ as.character(sepi_apertura)))%>%
-   mutate(sepi_anio = paste(anio,sepi_apertura_c, sep = "."))%>%
- mutate(sepi_anio = paste(anio,sepi_apertura_c, sep = "_"))
+confirmados_para_trabajar <- confirmados_para_trabajar %>% 
+  mutate(anio_c = year(fecha_apertura)) %>% 
+  mutate(anio = str_extract(anio_c, "\\d{2}$")) %>% 
+  mutate(sepi_apertura_c = case_when(sepi_apertura %in%  
+                                       c(1,2,3,4,5,6,7,8,9) ~ paste("0", sepi_apertura), TRUE ~ as.character(sepi_apertura)))%>%
+  mutate(sepi_anio = paste(anio,sepi_apertura_c, sep = "."))%>%
+  mutate(sepi_anio = paste(anio,sepi_apertura_c, sep = "_"))
 
 ```
 
-### *¿Cuales fueron las olas de mayores contagiados y fallecidos en el AMBA?*
+### ¿Cuales fueron las olas de mayores contagiados y fallecidos en el AMBA?
 
 ```{r}
 confirmados_para_trabajar %>%
-  group_by(sepi_anio, fallecido)%>%
-  arrange(desc(sepi_anio))%>%
-  ggplot(aes(x=sepi_anio, y=fallecido, fill=fallecido))+
-  geom_col()+
+  group_by(sepi_anio, fallecido) %>%
+  arrange(desc(sepi_anio)) %>%
+  ggplot(aes(x=sepi_anio, y=fallecido, fill=fallecido)) +
+  geom_col() +
   labs(title = "Casos confirmados de Covid-19",
        x = "Semana epidemiologica",
        y = "cantidad de casos") +
   theme(text = element_text(size=8),
         axis.text.x = element_text(angle=90, hjust=1)) 
 
-confirmados_xsemanaepi<-confirmados_para_trabajar%>%
-  group_by(sepi_anio)%>%
-  summarise(n=n())%>%
-  arrange(desc (n))%>%
+confirmados_xsemanaepi <- confirmados_para_trabajar%>%
+  group_by(sepi_anio) %>%
+  summarise(n=n()) %>%
+  arrange(desc (n)) %>%
   head(10)
-
+confirmados_xsemanaepi
 ```
 
 Las semanas de mayor contagio se dieron en el 2021, en particular las semanas *14, 15 y 16*. Esto se dio entre el *28 de marzo* y el *10 de abril*.  
 
 ```{r}
 confirmados_para_trabajar %>%
-  filter (fallecido=="SI")%>%
-  group_by(sepi_anio, fallecido)%>%
-  arrange(desc(sepi_anio))%>%
-  ggplot(aes(x=sepi_anio, y=fallecido, fill=fallecido))+
-  geom_col()+
+  filter (fallecido == "SI") %>%
+  group_by(sepi_anio, fallecido) %>%
+  arrange(desc(sepi_anio)) %>%
+  ggplot(aes(x=sepi_anio, y = fallecido, fill = fallecido)) +
+  geom_col() +
   labs(title = "Casos confirmados de Covid-19",
        x = "Semana epidemiologica",
        y = "cantidad de casos") +
@@ -303,12 +307,13 @@ confirmados_para_trabajar %>%
         axis.text.x = element_text(angle=90, hjust=1)) 
 
   
-  fallecidos_xsemanaepi <- confirmados_para_trabajar %>%
-    filter(fallecido=="SI") %>%
-    group_by(sepi_anio) %>%
-    summarise(n=n()) %>%
-    arrange(desc (n)) %>%
-    head(10)
+fallecidos_xsemanaepi <- confirmados_para_trabajar %>%
+  filter(fallecido == "SI") %>%
+  group_by(sepi_anio) %>%
+  summarise(n=n()) %>%
+  arrange(desc (n)) %>%
+  head(10)
+fallecidos_xsemanaepi
 ```
 
 La semana epidemiologia de mayor fallecimiento se dan entre *15 y 16* con más de *1300 fallecidos*. Esto se dio hacia principios de abril de este año (2021)
@@ -317,21 +322,21 @@ La semana epidemiologia de mayor fallecimiento se dan entre *15 y 16* con más d
 
 ```{r}
 # Calculamos Tasa de letalidad = fallecidos/nofallecidos*100
-  
-  confirmados_AMBA_xdepto <- confirmados_para_trabajar %>%
-    group_by(localidad, fallecido) %>%
-    summarise (residencia=n()) %>% 
-    pivot_wider(names_from = fallecido, values_from = residencia) %>% 
-    mutate(ratio_fall_nofall = round(SI / NO,5)*100) %>% 
-    select(-SI, -NO)
+confirmados_AMBA_xdepto <- confirmados_para_trabajar %>%
+  group_by(localidad, fallecido) %>%
+  summarise (residencia = n()) %>% 
+  pivot_wider(names_from = fallecido, values_from = residencia) %>% 
+  mutate(ratio_fall_nofall = round(SI / NO,5)*100) %>% 
+  select(-SI, -NO)
 ```
 
-### ¿cuales son los municipios que han registrado la mayor tasa de letalidad?
+### ¿Cuáles son los municipios que han registrado la mayor tasa de letalidad?
 
 ```{r}
 ranking_tasa_letalidad <- confirmados_AMBA_xdepto %>%
   arrange(desc(ratio_fall_nofall))%>%
   head(10)
+ranking_tasa_letalidad
 ```
 
 Al analizar la tasa de letalidad, aparecen como los municipios más impactados: *Almirante Brown* con 3.26 fallecidos cada 100 contagiados, siguiendoles *La Plata* y *Quilmes*, con 3.25 y 3.19. CABA sale del ranking de los municipios más afectados, lo que muestra que a pesar de la mayor cantidad de contagiados y fallecidos en esta localidad, la tasa de letalidad ha sido baja en relación a otras. Las más afectadas por al pandemia han sido *Quilmes* y *La Plata*, quienes no solo mostraban una mayor cantidad de contagiados y fallecidos, sino también una mayor tasa de letalidad. Por otro lado, *Almirante Brown* Una localidad más chica, ha sido altamente afectada por la pandemia. 
@@ -342,38 +347,38 @@ Al analizar la tasa de letalidad, aparecen como los municipios más impactados: 
 
 ```{r}
 covid_confirmados_pararegresion <- confirmados_para_trabajar %>%
-  group_by(localidad)%>%
-    summarise(edad_promedio=mean(edad,na.rm=TRUE),
-                                 Q_M=sum(sexo=="F")/n(),
-                                 Q_H=sum(sexo=="M")/n(),
-              ratioM_H=sum(sexo=="F")/sum(sexo=="M"),
-                                 Q_respirador=sum(asistencia_respiratoria_mecanica=="SI"),
-                                 Q_fin_privado=sum(origen_financiamiento=="Privado"), 
-                                 Q_fin_publico=sum(origen_financiamiento=="Público"),
-                                 #Q_internacion=sum(fecha_internacion!=NA),
-                                 Q_cuidadoIntensivo=sum(cuidado_intensivo=="SI"))
-                              
+  group_by(localidad) %>%
+  summarise(edad_promedio = mean(edad,na.rm=TRUE),
+            Q_M=sum(sexo == "F")/n(),
+            Q_H=sum(sexo == "M")/n(),
+            ratioM_H = sum(sexo == "F")/sum(sexo == "M"),
+            Q_respirador = sum(asistencia_respiratoria_mecanica == "SI"),
+            Q_fin_privado = sum(origen_financiamiento == "Privado"), 
+            Q_fin_publico = sum(origen_financiamiento == "Público"),
+            #Q_internacion = sum(fecha_internacion! = NA),
+            Q_cuidadoIntensivo = sum(cuidado_intensivo == "SI"))
+                          
                                                           
-  
-base_regresion_final <-covid_confirmados_pararegresion%>%
-left_join(confirmados_AMBA_xdepto, by = "localidad")
+base_regresion_final <- covid_confirmados_pararegresion %>%
+  left_join(confirmados_AMBA_xdepto, by = "localidad")
 
 
 modelo_lineal <- base_regresion_final %>%
-  lm(ratio_fall_nofall ~ edad_promedio+ratioM_H+ Q_fin_privado + Q_fin_publico + Q_respirador + Q_cuidadoIntensivo , .)
+  lm(ratio_fall_nofall ~ edad_promedio + ratioM_H + Q_fin_privado + Q_fin_publico + Q_respirador + Q_cuidadoIntensivo , .)
 
 summary(modelo_lineal)
-base_regresion_final %>%
-  ggplot(aes(x=edad_promedio, y=ratio_fall_nofall))+
-geom_point()
 
 base_regresion_final %>%
-  ggplot(aes(x=Q_M, y=ratio_fall_nofall))+
+  ggplot(aes(x = edad_promedio, y = ratio_fall_nofall)) +
+  geom_point()
+
+base_regresion_final %>%
+  ggplot(aes(x = Q_M, y = ratio_fall_nofall)) +
   geom_point() +
-geom_smooth(method = lm)
+  geom_smooth(method = lm)
 
 base_regresion_final %>%
-  ggplot(aes(x=Q_H, y=ratio_fall_nofall))+
+  ggplot(aes(x = Q_H, y = ratio_fall_nofall)) +
   geom_point() +
   geom_smooth(method = lm)
 
@@ -395,7 +400,7 @@ Los resultados no cambian cuando el analisis se hace interactuando la edad con e
 
 ```{r}
 modelo_lineal_3 <- base_regresion_final %>%
-  lm(ratio_fall_nofall ~ edad_promedio + ratioM_H +Q_respirador+Q_cuidadoIntensivo + 
+  lm(ratio_fall_nofall ~ edad_promedio + ratioM_H + Q_respirador + Q_cuidadoIntensivo + 
        Q_cuidadoIntensivo * edad_promedio +  Q_cuidadoIntensivo * edad_promedio, .)
 
 summary(modelo_lineal_3)
@@ -434,13 +439,13 @@ Además, si comparamos los residuos de ambos modelos, vemos que en el modelo 5, 
 #Analisis de los residuos
 
 base_regresion_final%>%
-  mutate (residuo1 =(predict.lm(modelo_lineal)-base_regresion_final$ratio_fall_nofall))%>%
+  mutate(residuo1 = (predict.lm(modelo_lineal)-base_regresion_final$ratio_fall_nofall))%>%
   ggplot(aes(x=residuo1))+
   geom_histogram()
 
 base_regresion_final%>%
-  mutate (residuo5 =(predict.lm(modelo_lineal_5)-base_regresion_final$ratio_fall_nofall))%>%
-  ggplot(aes(x=residuo5))+
+  mutate (residuo5 = (predict.lm(modelo_lineal_5)-base_regresion_final$ratio_fall_nofall))%>%
+  ggplot(aes(x = residuo5))+
   geom_histogram()
 
 ```
