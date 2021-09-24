@@ -28,7 +28,7 @@ library(kableExtra)
 
 ## 1.[**Introducción**]{.ul}
 
-En el año 2020 una fuerte crisis sanitaria se originó por la aparición del virus SARCOV-2 y la propagación de la pandemia del COVID-19.Esta pandemia afecto la vida y la salud de la población a nivel mundial.En Argentina se han tomado diferentes medidas de aislamiento social pero, a pesar de ello, una buena parte de la población ha sido afectada, alcanzando más de 100.000 casos de personas fallecidas.En este marco, nos interesa conocer quienes han sido las personas más vulnerables al no poder su superar la enfermedad, y encontrar algunas de las variables que podrían haber influido en su deceso.Se analizarán los factores que puedan afectar la tasa de fallecidos por COVID-19 (calculada en relación al total de casos de personas contagiadas en diferentes localidades del AMBA).
+En el año 2020 una fuerte crisis sanitaria se originó por la aparición del virus SARCOV-2 y la propagación de la pandemia del COVID-19.Esta pandemia afecto la vida y la salud de la población a nivel mundial.En Argentina se han tomado diferentes medidas de aislamiento social pero, a pesar de ello, una buena parte de la población ha sido afectada, alcanzando más de *100.000* casos de personas fallecidas.En este marco, nos interesa conocer quienes han sido las personas más vulnerables al no poder su superar la enfermedad, y encontrar algunas de las variables que podrían haber influido en su deceso.Se analizarán los factores que puedan afectar la tasa de fallecidos por *COVID-19* (calculada en relación al total de casos de personas contagiadas en diferentes localidades del AMBA).
 Se utilizará la base pública provista por el Ministerio de Salud de la Nación, sobre la situación de la COVID-19, disponible en: <https://datos.gob.ar/dataset/salud-covid-19-casos-registrados-republica-argentina/archivo/salud_fd657d02-a33a-498b-a91b-2ef1a68b8d16>.
 
 Esta base contiene información de actualización diaria, notificando CASOS COVID-19 registrados en el país. La fecha de descarga de la base es 11 de agosto de 2021 con un corte a las 17:45 hs.Se indagará cómo está compuesta la base, sus dimensiones y los tipos de valores que conforman cada variable. 
@@ -40,7 +40,7 @@ Se analizarán modelos multivariados de efectos fijos y se evaluará la capacida
 
 ## 2. [**Estructura de los datos**]{.ul}
 
-La base covid-19 cuenta con 25 variables y 16.552.542 registros en total.
+La base covid-19 cuenta con *25* variables y *16.552.542* registros en total.
 Para posibilitar su procesamiento, se reducirá el análisis a los casos clasificados como "confirmados".
 **Eso reduce la cantidad de registros a 2.497.319**.
 Una vez establecido este recorte, se trabajará sobre los casos correspondientes al AMBA, lo que **devuelve una base de 1.360.663 registros**.
@@ -178,7 +178,7 @@ str(confirmados_para_trabajar)
 skim(confirmados_para_trabajar)
 ```
 
-Dada la cantidad de valores missing en la variable "fecha_internacion", se eliminará la variable del análisis. Eliminamos los NA y outliers de edad para seleccionar sólo las que están entre -1 (bebes) y 105 años. Eliminamos también las respuestas "NR" de la variable sexo (se trata de pocos registros).  
+Dada la cantidad de valores missing en la variable "fecha_internacion", se eliminará la variable del análisis. Eliminamos los NA y outliers de edad para seleccionar sólo las que están entre *-1* (bebes) y *105 años*. Eliminamos también las respuestas *"NR"* de la variable sexo (se trata de pocos registros).  
 
 ```{r Outliers}
 confirmados_para_trabajar <-confirmados_para_trabajar %>%
@@ -226,7 +226,7 @@ confirmados_agrupadosxedad
 ```
 
 Se observa que la edad de mayor de contagio se da entre los *26 y 35 años*.
-Y, la mayor cantidad de contagiados, en los *29 y 30 años*, con más de *34 mil contagiados*. Sin embargo, los más afectados por la enfermedad son aquellos de mayor edad, dandose la mayor cantidad de fallecidos entre los 70 y 80 años, con el mayor pico en los *77 años* con *969 fallecidos*, siguiendole muy de cerca la edad de *73 años* con *656 fallecidos*.
+Y, la mayor cantidad de contagiados, en los *29 y 30 años*, con más de *34 mil contagiados*. Sin embargo, los más afectados por la enfermedad son aquellos de mayor edad, dandose la mayor cantidad de fallecidos entre los *70 y 80 años*, con el mayor pico en los *77 años* con *969 fallecidos*, siguiendole muy de cerca la edad de *73 años* con *656 fallecidos*.
 
 ```{r}
 confirmados_agrupadosxlocalidad <- confirmados_para_trabajar %>%
@@ -249,15 +249,17 @@ Fallecidos_agrupadosxlocalidad <- confirmados_para_trabajar %>%
 Fallecidos_agrupadosxlocalidad
 ```
 
-Las localidades con mayor **tasa de fallecidos**, conciden con las de mayores casos,pero el ranking es diferente siendo *La Matanza* la localidad con mayor cantidad de decesos, seguidos por *CABA,La Plata y Quilmes*. 
+Las localidades con mayor **tasa de fallecidos**, conciden con las de mayores casos,pero el ranking es diferente siendo *La Matanza* la localidad con mayor cantidad de decesos, seguidos por *CABA, La Plata y Quilmes*. 
 Cabe destacar que el salto que se produce entre las dos primeras es mucho menor que el que se observa en los contagiados. 
+
 Mientras que la brecha entre el 3er puesto y el 1ro en número de contagiados es del *30%*, entre las mismas localidades,la relación en la tasa de letalidad es del *56%*, lo que muestra que una mayor cantidad de contagio no se relaciona proporcionalmente con una mayor cantidad de fallecidos
+
 Es por ello que en el trabajo vamos a analizar los factores que explican estas diferentes tasas de letalidad entre las localidades. 
 
 
 ## 4.[**Analizando las olas de contagio**]{.ul}
 
-### Semana epidemiologica para ver las olas de contagio
+### 4.1 Semana epidemiologica para ver las olas de contagio
 
 ```{r}
 confirmados_para_trabajar <- confirmados_para_trabajar %>% 
@@ -270,7 +272,7 @@ confirmados_para_trabajar <- confirmados_para_trabajar %>%
 
 ```
 
-### ¿Cuales fueron las olas de mayores contagiados y fallecidos en el AMBA?
+### 4.2 ¿Cuales fueron las olas de mayores contagiados y fallecidos en el AMBA?
 
 ```{r}
 confirmados_para_trabajar %>%
@@ -331,7 +333,7 @@ confirmados_AMBA_xdepto <- confirmados_para_trabajar %>%
   select(-SI, -NO)
 ```
 
-### ¿Cuáles son los municipios que han registrado la mayor tasa de letalidad?
+### 5.1 ¿Cuáles son los municipios que han registrado la mayor tasa de letalidad?
 
 ```{r}
 ranking_tasa_letalidad <- confirmados_AMBA_xdepto %>%
@@ -342,7 +344,7 @@ knitr::kable(ranking_tasa_letalidad)
 
 Al analizar la tasa de letalidad, aparecen como los municipios más impactados: *La Plata* con 3.225 fallecidos cada 100 contagiados, seguid por *Almirante Brown* con 3.217 y *Hurlingham*, con 3.124. CABA sale del ranking de los municipios más afectados, lo que muestra que, a pesar de la mayor cantidad de contagiados y fallecidos en esta localidad, la tasa de letalidad ha sido baja en relación a otras. Las más afectadas - en términos de cantidad de personas fallecidas - en pandemia han sido *La Matanza* y *CABA*. Sin embargo, localidades como *Almirante Brown* y *Hurlingham* presentan una mayor tasa de letalidad, resultando mayormente afectadas por la pandemia.  
 
-------------------------------------------------------------------------
+ ------------------------------------------------------------------------
 
 ## 6.[**Armando la Regresión**]{.ul}
 
@@ -376,10 +378,12 @@ base_regresion_final %>%
 
 
 Se intentó analizar el fecto de la variable sexo en el total de infectados/as, pero el modelo mostró multicolinealidad entre las variables. Esta variable fue reemplazada por el ratio mujer/hombre.  
+
 La tasa de letalidad por municipio esta asociada a la edad de las personas contagiadas pero no guarda relación con el resto de las variables.
 Los resultados indican que la tasa de letalidad por municipio aumenta en **0,36** puntos cuando aumenta en un año la edad del infectado.
+
 Retomando lo visto anteriormente, los municipios con mayor tasa de letalidad serán aquellos que presenten una población de infectados más envejecida.  
-El $R^2$ ajustado indica que el modelo explica el 40% de las observaciones con un F significativo.  
+El $R^2$ ajustado indica que el modelo explica el *40%* de las observaciones con un F significativo.  
 
 En un segundo modelo, se probará el análisis interactuando la edad y el sexo de los infectados.  
 
@@ -391,6 +395,7 @@ summary(modelo_lineal_2)
 ```
 
 En el caso del segundo modelo, los resultados muestran que ninguna de las variables incoporadas son significativas.  
+
 Elaboramos un tercer modelo en el que se incorporará una interacción entre la edad promedio y la internación en cuidados intensivos.  
 
 ```{r}
@@ -413,6 +418,7 @@ summary(modelo_lineal_4)
 ```
 
 La interacción incorporada en el modelo 4 tampoco representa un efecto significativo en la tasa de letalidad.  
+
 En un quinto modelo, se incorpora la interacción entre haber pasado por UCI y haber tenido asistencia respiratoria mecánica.  
 
 ```{r}
@@ -423,13 +429,13 @@ modelo_lineal_5 <- base_regresion_final %>%
 summary(modelo_lineal_5)
 ```
 
-Este último modelo testeado, muestra que el estar en cuidados intensivos y tener asistencia respiratoria mecánica reduce la tasa de mortalidad en 0,000008201 puntos. Y también hace reducir la incidencia la variable edad promedio, pasando a 0,292, y el intercepeto pasa a ser -9.68. El $R^2$ ajustado aumenta a un 55% en comparación con el modelo 1. Sin embargo, el bajo número del coeficiente de la interacción presenta un valor que puede considerarse poco significativo.  
+Este último modelo testeado, muestra que el estar en cuidados intensivos y tener asistencia respiratoria mecánica reduce la tasa de mortalidad en *0,000008201* puntos. Y también hace reducir la incidencia la variable edad promedio, pasando a *0,292*, y el intercepeto pasa a ser *-9.68*. El $R^2$ ajustado aumenta a un 55% en comparación con el modelo 1. Sin embargo, el bajo número del coeficiente de la interacción presenta un valor que puede considerarse poco significativo.  
 
-### Comparando el modelo 1 y 5:
+### 6.1 Comparando el modelo 1 y 5:
 
-Teniendo en cuenta el $R^2$ ajustado y el estadístico F de cada modelo, vemos que para el modelo 1 donde solo considerabamos la edad, el R explicaba el 41% de la variabilidad de los datos, con un estadistico F significativo. En tanto, cuando incluimos la interacción que tiene en cuenta la cantidad de enfermos internados en CI con asistencia respiratoria mecánica, el $R^2$ alcanza el 56% (crece 15 puntos) también con un F significativo.  
+Teniendo en cuenta el $R^2$ ajustado y el estadístico F de cada modelo, vemos que para el modelo 1 donde solo considerabamos la edad, el $R^2$ explicaba el *41%* de la variabilidad de los datos, con un estadistico F significativo. En tanto, cuando incluimos la interacción que tiene en cuenta la cantidad de enfermos internados en CI con asistencia respiratoria mecánica, el $R^2$ alcanza el *56%* (crece 15 puntos) también con un F significativo.  
 
-Además, si comparamos los residuos de ambos modelos, vemos que en el modelo 5, los mismos se concentran más en torno  al 0, a diferencia del modelo uno.  
+Además, si comparamos los residuos de ambos modelos, vemos que en el *modelo 5*, los mismos se concentran más en torno al 0, a diferencia del modelo uno.  
 
 ```{r}
 # Análisis gráfico de los residuos modelos 1 y 5.
@@ -445,20 +451,21 @@ base_regresion_final %>%
   geom_point(color = "red")
 ```
 
-Como conclusión, asumimos que el modelo 5 explica mejor la tasa de letalidad de las localidades, lo cual puede resumirse de la siguiente manera: **tasa de letalidad del covid = -9.682 +0.293 * edad promedio de una localidad -0.000008201 * personas internadas en CI con asistencia respiratoria**
-
-### Algunas predicciones:
-
-* CASO 1: Un municipio donde la edad promedio de los infectados es de 60, la cantidad de internados en CI con asistencia respiratoria mecanica es de 700 personas la tasa de letalidad llegaria al 7.9 puntos (Tasa de letalidad= -9.682 + 0.293 * 60 -0.0000082 * 700). Es decir, casi 8 de cada 100 infectados fallecerian por la enfermedad.  
+Como conclusión, asumimos que el modelo 5 explica mejor la tasa de letalidad de las localidades, lo cual puede resumirse de la siguiente manera: **tasa de letalidad del covid = -9.682 + 0.293** $\times$ **edad promedio de una localidad -0.000008201** $\times$ **personas internadas en CI con asistencia respiratoria**
 
 
-* CASO 2: Si los que llegan a terapia intensiva fueran de 3 veces más, es decir 21.000, la tasa de letalidad llegaria a 7.72, es decir, bajan en apenas 0.2 puntos cada 100 infectados los fallecidos por la enfermedad.  
+### 6.2 Algunas predicciones:
 
-* CASO 3: En tanto, si consideramos un municipio que aumenta la edad de los infectados, de 60 a 70, la tasa de letalidad asciende a 10.8 fallecidos cada 100 habitantes, aumentando en casi tres puntos respecto del CASO 1.  
+* **CASO 1**: Un municipio donde la edad promedio de los infectados es de 60, la cantidad de internados en CI con asistencia respiratoria mecanica es de 700 personas la tasa de letalidad llegaria al 7.9 puntos (Tasa de letalidad= -9.682 + 0.293 * 60 -0.0000082 * 700). Es decir, casi 8 de cada 100 infectados fallecerian por la enfermedad.  
 
-Estos datos muestran que una estrategia más eficiente para aminorar la letalidad de la enfermedad es el cuidado de las personas mayores, que son las más vulnerables. Son pocos los cambios que se pueden lograr en reducir la letalidad, aumentando las camas de cuidado intensivo y la asistencia respiratoria. De ello, puede suponerse que la edad (y con ella los factores de riesgo) son más importantes, y una vez avanzada la enfermedad la posibilidad de sobrevivir habiendo llegado a necesitar asistencia respiratoria mecánica, son bajas.  
 
-------------------------------------------------------------------------
+* **CASO 2**: Si los que llegan a terapia intensiva fueran de 3 veces más, es decir 21.000, la tasa de letalidad llegaria a 7.72, es decir, bajan en apenas 0.2 puntos cada 100 infectados los fallecidos por la enfermedad.  
+
+* **CASO 3**: En tanto, si consideramos un municipio que aumenta la edad de los infectados, de 60 a 70, la tasa de letalidad asciende a 10.8 fallecidos cada 100 habitantes, aumentando en casi tres puntos respecto del CASO 1.  
+
+Estos datos muestran que una estrategia más eficiente para aminorar la letalidad de la enfermedad es el cuidado de las personas mayores, que son las más vulnerables. Son pocos los cambios que se pueden lograr en reducir la letalidad, aumentando las camas de cuidado intensivo y la asistencia respiratoria. De ello, puede suponerse que la edad - y con ella los factores de riesgo - son más importantes, y una vez avanzada la enfermedad la posibilidad de sobrevivir habiendo llegado a necesitar asistencia respiratoria mecánica, son bajas.  
+
+ ------------------------------------------------------------------------
 
 ## 7.[**Conclusiones**]{.ul}
 
